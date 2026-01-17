@@ -1,0 +1,11 @@
+/home/user/tlatoami/src/Tlaoami.Domain/bin/Debug/net8.0/Tlaoami.Domain.deps.json
+/home/user/tlatoami/src/Tlaoami.Domain/bin/Debug/net8.0/Tlaoami.Domain.dll
+/home/user/tlatoami/src/Tlaoami.Domain/bin/Debug/net8.0/Tlaoami.Domain.pdb
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/Tlaoami.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/Tlaoami.Domain.AssemblyInfoInputs.cache
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/Tlaoami.Domain.AssemblyInfo.cs
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/Tlaoami.Domain.csproj.CoreCompileInputs.cache
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/Tlaoami.Domain.dll
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/refint/Tlaoami.Domain.dll
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/Tlaoami.Domain.pdb
+/home/user/tlatoami/src/Tlaoami.Domain/obj/Debug/net8.0/ref/Tlaoami.Domain.dll

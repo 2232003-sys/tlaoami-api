@@ -4,7 +4,7 @@
   # Which nixpkgs channel to use.
   channel = "stable-24.11"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
-  packages = [ pkgs.dotnet-sdk_9 pkgs.nodejs_20 ];
+  packages = [ pkgs.dotnet-sdk_8 pkgs.nodejs_20 ];
   # Sets environment variables in the workspace
   env = { };
   idx = {

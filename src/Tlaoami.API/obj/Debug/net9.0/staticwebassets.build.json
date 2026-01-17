@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "kbSlYHkzWXyZgA3gQZjgMCmS4LTeR6hTPRxXZhPWuus=",
+  "Source": "Tlaoami.API",
+  "BasePath": "_content/Tlaoami.API",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
