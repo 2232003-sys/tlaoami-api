@@ -1,13 +1,14 @@
 using System;
-using Tlaoami.Domain.Enums;
+using Tlaoami.Domain.Entities;
 
-namespace Tlaoami.API.Dtos
+namespace Tlaoami.Application.Dtos
 {
     public class PagoDto
     {
         public Guid Id { get; set; }
+        public Guid FacturaId { get; set; }
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; }
-        public string Metodo { get; set; }
+        public string? Metodo { get; set; }
     }
 }

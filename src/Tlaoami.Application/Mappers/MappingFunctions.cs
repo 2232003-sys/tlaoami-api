@@ -1,0 +1,67 @@
+using Tlaoami.Application.Dtos;
+using Tlaoami.Domain.Entities;
+using System.Linq;
+
+namespace Tlaoami.Application.Mappers
+{
+    public static class MappingFunctions
+    {
+        public static AlumnoDto ToAlumnoDto(Alumno alumno)
+        {
+            return new AlumnoDto
+            {
+                Id = alumno.Id,
+                Nombre = alumno.Nombre,
+                Apellido = alumno.Apellido,
+                Email = alumno.Email,
+                FechaInscripcion = alumno.FechaInscripcion
+            };
+        }
+
+        public static FacturaDto ToFacturaDto(Factura factura)
+        {
+            return new FacturaDto
+            {
+                Id = factura.Id,
+                AlumnoId = factura.AlumnoId,
+                NumeroFactura = factura.NumeroFactura,
+                Monto = factura.Monto,
+                FechaEmision = factura.FechaEmision,
+                FechaVencimiento = factura.FechaVencimiento,
+                Estado = factura.Estado.ToString()
+            };
+        }
+
+        public static PagoDto ToPagoDto(Pago pago)
+        {
+            return new PagoDto
+            {
+                Id = pago.Id,
+                FacturaId = pago.FacturaId,
+                Monto = pago.Monto,
+                FechaPago = pago.FechaPago,
+                Metodo = pago.Metodo.ToString()
+            };
+        }
+
+        public static EstadoCuentaDto ToEstadoCuentaDto(Alumno alumno)
+        {
+            var facturasPagadas = alumno.Facturas.Where(f => f.Estado == EstadoFactura.Pagada).ToList();
+            var facturasPendientes = alumno.Facturas.Where(f => f.Estado != EstadoFactura.Pagada).ToList();
+
+            var totalFacturado = alumno.Facturas.Sum(f => f.Monto);
+            var totalPagado = facturasPagadas.Sum(f => f.Monto);
+
+            return new EstadoCuentaDto
+            {
+                AlumnoId = alumno.Id,
+                NombreCompleto = $"{alumno.Nombre} {alumno.Apellido}",
+                TotalFacturado = totalFacturado,
+                TotalPagado = totalPagado,
+                SaldoPendiente = totalFacturado - totalPagado,
+                FacturasPagadas = facturasPagadas.Select(ToFacturaDto).ToList(),
+                FacturasPendientes = facturasPendientes.Select(ToFacturaDto).ToList()
+            };
+        }
+    }
+}

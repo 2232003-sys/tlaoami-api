@@ -10,7 +10,7 @@
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Design": "8.0.0",
           "Swashbuckle.AspNetCore": "6.4.0",
-          "Tlaoami.Infrastructure": "1.0.0"
+          "Tlaoami.Application": "1.0.0"
         },
         "runtime": {
           "Tlaoami.API.dll": {}
@@ -678,6 +678,18 @@
         }
       },
       "System.Threading.Channels/6.0.0": {},
+      "Tlaoami.Application/1.0.0": {
+        "dependencies": {
+          "Tlaoami.Domain": "1.0.0",
+          "Tlaoami.Infrastructure": "1.0.0"
+        },
+        "runtime": {
+          "Tlaoami.Application.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
       "Tlaoami.Domain/1.0.0": {
         "runtime": {
           "Tlaoami.Domain.dll": {
@@ -1070,6 +1082,11 @@
       "sha512": "sha512-TY8/9+tI0mNaUMgntOxxaq2ndTkdXqLSxvPmas7XEqOlv9lQtB7wLjYGd756lOaO7Dvb5r/WXhluM+0Xe87v5Q==",
       "path": "system.threading.channels/6.0.0",
       "hashPath": "system.threading.channels.6.0.0.nupkg.sha512"
+    },
+    "Tlaoami.Application/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
     },
     "Tlaoami.Domain/1.0.0": {
       "type": "project",

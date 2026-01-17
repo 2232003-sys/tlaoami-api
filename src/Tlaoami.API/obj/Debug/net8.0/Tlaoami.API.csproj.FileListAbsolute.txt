@@ -129,3 +129,5 @@
 /home/user/tlatoami/src/Tlaoami.API/obj/Debug/net8.0/Tlaoami.API.pdb
 /home/user/tlatoami/src/Tlaoami.API/obj/Debug/net8.0/Tlaoami.API.genruntimeconfig.cache
 /home/user/tlatoami/src/Tlaoami.API/obj/Debug/net8.0/ref/Tlaoami.API.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Tlaoami.Application.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Tlaoami.Application.pdb

@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Tlaoami.Domain.Entities;
-using Tlaoami.Domain.Enums;
 
 public class TlaoamiDbContext : DbContext
 {

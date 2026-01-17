@@ -1103,6 +1103,20 @@
           "buildTransitive/netcoreapp3.1/_._": {}
         }
       },
+      "Tlaoami.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "Tlaoami.Domain": "1.0.0",
+          "Tlaoami.Infrastructure": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/Tlaoami.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/Tlaoami.Application.dll": {}
+        }
+      },
       "Tlaoami.Domain/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
@@ -2959,6 +2973,11 @@
         "useSharedDesignerContext.txt"
       ]
     },
+    "Tlaoami.Application/1.0.0": {
+      "type": "project",
+      "path": "../Tlaoami.Application/Tlaoami.Application.csproj",
+      "msbuildProject": "../Tlaoami.Application/Tlaoami.Application.csproj"
+    },
     "Tlaoami.Domain/1.0.0": {
       "type": "project",
       "path": "../Tlaoami.Domain/Tlaoami.Domain.csproj",
@@ -2974,7 +2993,7 @@
     "net8.0": [
       "Microsoft.EntityFrameworkCore.Design >= 8.0.0",
       "Swashbuckle.AspNetCore >= 6.4.0",
-      "Tlaoami.Infrastructure >= 1.0.0"
+      "Tlaoami.Application >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -3002,8 +3021,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/user/tlatoami/src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj": {
-              "projectPath": "/home/user/tlatoami/src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj"
+            "/home/user/tlatoami/src/Tlaoami.Application/Tlaoami.Application.csproj": {
+              "projectPath": "/home/user/tlatoami/src/Tlaoami.Application/Tlaoami.Application.csproj"
             }
           }
         }

@@ -1,57 +1,50 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Tlaoami.API.Dtos;
-using Tlaoami.Domain.Entities;
+using Tlaoami.Application.Dtos;
+using Tlaoami.Application.Interfaces;
 
 namespace Tlaoami.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v1/[controller]")]
     public class AlumnosController : ControllerBase
     {
-        private readonly TlaoamiDbContext _context;
+        private readonly IAlumnoService _alumnoService;
 
-        public AlumnosController(TlaoamiDbContext context)
+        public AlumnosController(IAlumnoService alumnoService)
         {
-            _context = context;
+            _alumnoService = alumnoService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<AlumnoDto>>> GetAlumnos()
         {
-            var alumnos = await _context.Alumnos
-                .Include(a => a.Facturas)
-                    .ThenInclude(f => f.Pagos)
-                .ToListAsync();
+            var alumnos = await _alumnoService.GetAllAlumnosAsync();
+            return Ok(alumnos);
+        }
 
-            var alumnosDto = alumnos.Select(a => new AlumnoDto
+        [HttpGet("{id}")]
+        public async Task<ActionResult<AlumnoDto>> GetAlumno(Guid id)
+        {
+            var alumno = await _alumnoService.GetAlumnoByIdAsync(id);
+            if (alumno == null)
             {
-                Id = a.Id,
-                Nombre = a.Nombre,
-                Apellido = a.Apellido,
-                Email = a.Email,
-                Facturas = a.Facturas.Select(f => new FacturaDto
-                {
-                    Id = f.Id,
-                    NumeroFactura = f.NumeroFactura,
-                    Monto = f.Monto,
-                    FechaEmision = f.FechaEmision,
-                    FechaVencimiento = f.FechaVencimiento,
-                    Estado = f.Estado.ToString(),
-                    Pagos = f.Pagos.Select(p => new PagoDto
-                    {
-                        Id = p.Id,
-                        Monto = p.Monto,
-                        FechaPago = p.FechaPago,
-                        Metodo = p.Metodo.ToString()
-                    }).ToList()
-                }).ToList()
-            }).ToList();
+                return NotFound();
+            }
+            return Ok(alumno);
+        }
 
-            return Ok(alumnosDto);
+        [HttpGet("{id}/estado-cuenta")]
+        public async Task<ActionResult<EstadoCuentaDto>> GetEstadoCuenta(Guid id)
+        {
+            var estadoCuenta = await _alumnoService.GetEstadoCuentaAsync(id);
+            if (estadoCuenta == null)
+            {
+                return NotFound();
+            }
+            return Ok(estadoCuenta);
         }
     }
 }

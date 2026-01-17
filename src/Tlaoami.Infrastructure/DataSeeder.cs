@@ -1,9 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Tlaoami.Domain.Entities;
-using Tlaoami.Domain.Enums;
 
 namespace Tlaoami.Infrastructure
 {
@@ -11,10 +9,6 @@ namespace Tlaoami.Infrastructure
     {
         public static async Task SeedAsync(TlaoamiDbContext context)
         {
-            // Ensure the database is created.
-            await context.Database.MigrateAsync();
-
-            // Check if there is already data.
             if (context.Alumnos.Any())
             {
                 return; // DB has been seeded
@@ -23,65 +17,69 @@ namespace Tlaoami.Infrastructure
             var alumno1 = new Alumno
             {
                 Id = Guid.NewGuid(),
-                Nombre = "Carlos",
-                Apellido = "Rodriguez",
-                Email = "carlos.rodriguez@example.com",
-                FechaNacimiento = new DateTime(1995, 5, 20),
-                Facturas = new[]
-                {
-                    new Factura
-                    {
-                        Id = Guid.NewGuid(),
-                        NumeroFactura = "F-2024-001",
-                        Monto = 150.00m,
-                        FechaEmision = DateTime.UtcNow.AddDays(-30),
-                        FechaVencimiento = DateTime.UtcNow.AddDays(-15),
-                        Estado = EstadoFactura.Pagada,
-                        Pagos = new[]
-                        {
-                            new Pago
-                            {
-                                Id = Guid.NewGuid(),
-                                Monto = 150.00m,
-                                FechaPago = DateTime.UtcNow.AddDays(-20),
-                                Metodo = MetodoPago.TarjetaCredito
-                            }
-                        }
-                    }
-                }
+                Nombre = "Juan",
+                Apellido = "Pérez",
+                Email = "juan.perez@example.com",
+                FechaInscripcion = DateTime.UtcNow.AddMonths(-6)
             };
 
             var alumno2 = new Alumno
             {
                 Id = Guid.NewGuid(),
-                Nombre = "Ana",
-                Apellido = "Lopez",
-                Email = "ana.lopez@example.com",
-                FechaNacimiento = new DateTime(1998, 8, 12),
-                Facturas = new[]
-                {
-                    new Factura
-                    {
-                        Id = Guid.NewGuid(),
-                        NumeroFactura = "F-2024-002",
-                        Monto = 300.50m,
-                        FechaEmision = DateTime.UtcNow.AddDays(-10),
-                        FechaVencimiento = DateTime.UtcNow.AddDays(5),
-                        Estado = EstadoFactura.Pendiente
-                    },
-                    new Factura
-                    {
-                        Id = Guid.NewGuid(),
-                        NumeroFactura = "F-2024-003",
-                        Monto = 75.00m,
-                        FechaEmision = DateTime.UtcNow.AddDays(-60),
-                        FechaVencimiento = DateTime.UtcNow.AddDays(-45),
-                        Estado = EstadoFactura.Vencida
-                    }
-                }
+                Nombre = "María",
+                Apellido = "García",
+                Email = "maria.garcia@example.com",
+                FechaInscripcion = DateTime.UtcNow.AddMonths(-12)
             };
-            
-            await context.Alumnos.AddRangeAsync(alumno1, alumno2);
+
+            var factura1 = new Factura
+            {
+                Id = Guid.NewGuid(),
+                AlumnoId = alumno1.Id,
+                NumeroFactura = "F001",
+                Monto = 100.00m,
+                FechaEmision = DateTime.UtcNow.AddDays(-30),
+                FechaVencimiento = DateTime.UtcNow.AddDays(-15),
+                Estado = EstadoFactura.Pagada
+            };
+
+            var pago1 = new Pago
+            {
+                Id = Guid.NewGuid(),
+                FacturaId = factura1.Id,
+                Monto = 100.00m,
+                FechaPago = DateTime.UtcNow.AddDays(-20),
+                Metodo = MetodoPago.Tarjeta
+            };
+
+            var factura2 = new Factura
+            {
+                Id = Guid.NewGuid(),
+                AlumnoId = alumno1.Id,
+                NumeroFactura = "F002",
+                Monto = 75.50m,
+                FechaEmision = DateTime.UtcNow.AddDays(-10),
+                FechaVencimiento = DateTime.UtcNow.AddDays(5),
+                Estado = EstadoFactura.Pendiente
+            };
+
+            var factura3 = new Factura
+            {
+                Id = Guid.NewGuid(),
+                AlumnoId = alumno2.Id,
+                NumeroFactura = "F003",
+                Monto = 250.00m,
+                FechaEmision = DateTime.UtcNow.AddDays(-60),
+                FechaVencimiento = DateTime.UtcNow.AddDays(-45),
+                Estado = EstadoFactura.Vencida
+            };
+
+            factura1.Pagos.Add(pago1);
+
+            context.Alumnos.AddRange(alumno1, alumno2);
+            context.Facturas.AddRange(factura1, factura2, factura3);
+            context.Pagos.Add(pago1);
+
             await context.SaveChangesAsync();
         }
     }
