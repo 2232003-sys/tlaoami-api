@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tlaoami.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1d6e618080dd7d941aeebfb3cfd76205920c9d03")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+304bda476830f0562cbe63ecd78a14c409d33229")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tlaoami.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tlaoami.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

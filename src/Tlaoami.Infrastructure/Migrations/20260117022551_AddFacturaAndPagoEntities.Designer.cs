@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Tlaoami.Infrastructure.Migrations
 {
     [DbContext(typeof(TlaoamiDbContext))]
-    partial class TlaoamiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260117022551_AddFacturaAndPagoEntities")]
+    partial class AddFacturaAndPagoEntities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -113,7 +116,7 @@ namespace Tlaoami.Infrastructure.Migrations
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
                 {
                     b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
-                        .WithMany("Facturas")
+                        .WithMany()
                         .HasForeignKey("AlumnoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -130,11 +133,6 @@ namespace Tlaoami.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Factura");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.Alumno", b =>
-                {
-                    b.Navigation("Facturas");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
