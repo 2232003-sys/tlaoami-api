@@ -131,3 +131,15 @@
 /home/user/tlatoami/src/Tlaoami.API/obj/Debug/net8.0/ref/Tlaoami.API.dll
 /home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Tlaoami.Application.dll
 /home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Tlaoami.Application.pdb
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.Configuration.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.Configuration.Abstractions.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.Configuration.FileExtensions.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.Configuration.Json.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.FileProviders.Physical.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.FileSystemGlobbing.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/Microsoft.Extensions.Primitives.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/System.IO.Pipelines.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/System.Text.Encodings.Web.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/System.Text.Json.dll
+/home/user/tlatoami/src/Tlaoami.API/bin/Debug/net8.0/runtimes/browser/lib/net8.0/System.Text.Encodings.Web.dll

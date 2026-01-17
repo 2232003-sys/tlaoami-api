@@ -20,12 +20,14 @@ namespace Tlaoami.Application.Mappers
 
         public static FacturaDto ToFacturaDto(Factura factura)
         {
+            var totalPagado = factura.Pagos?.Sum(p => p.Monto) ?? 0;
             return new FacturaDto
             {
                 Id = factura.Id,
                 AlumnoId = factura.AlumnoId,
                 NumeroFactura = factura.NumeroFactura,
                 Monto = factura.Monto,
+                Saldo = factura.Monto - totalPagado,
                 FechaEmision = factura.FechaEmision,
                 FechaVencimiento = factura.FechaVencimiento,
                 Estado = factura.Estado.ToString()
@@ -50,7 +52,7 @@ namespace Tlaoami.Application.Mappers
             var facturasPendientes = alumno.Facturas.Where(f => f.Estado != EstadoFactura.Pagada).ToList();
 
             var totalFacturado = alumno.Facturas.Sum(f => f.Monto);
-            var totalPagado = facturasPagadas.Sum(f => f.Monto);
+            var totalPagado = alumno.Facturas.SelectMany(f => f.Pagos ?? Enumerable.Empty<Pago>()).Sum(p => p.Monto);
 
             return new EstadoCuentaDto
             {
@@ -59,8 +61,8 @@ namespace Tlaoami.Application.Mappers
                 TotalFacturado = totalFacturado,
                 TotalPagado = totalPagado,
                 SaldoPendiente = totalFacturado - totalPagado,
-                FacturasPagadas = facturasPagadas.Select(ToFacturaDto).ToList(),
-                FacturasPendientes = facturasPendientes.Select(ToFacturaDto).ToList()
+                FacturasPagadas = facturasPagadas.Select(f => ToFacturaDto(f)).ToList(),
+                FacturasPendientes = facturasPendientes.Select(f => ToFacturaDto(f)).ToList()
             };
         }
     }

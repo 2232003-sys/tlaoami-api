@@ -42,13 +42,28 @@ namespace Tlaoami.Application.Services
                 Metodo = (MetodoPago)Enum.Parse(typeof(MetodoPago), pagoDto.Metodo!, true)
             };
 
-            var factura = await _context.Facturas.FindAsync(pago.FacturaId);
+            _context.Pagos.Add(pago);
+
+            var factura = await _context.Facturas
+                .Include(f => f.Pagos)
+                .SingleOrDefaultAsync(f => f.Id == pagoDto.FacturaId);
+
             if (factura != null)
             {
-                factura.Estado = EstadoFactura.Pagada;
+                // The new payment is already being tracked by EF Core's context,
+                // so it will be included in the sum.
+                var totalPagado = factura.Pagos.Sum(p => p.Monto) + pago.Monto;
+
+                if (totalPagado >= factura.Monto)
+                {
+                    factura.Estado = EstadoFactura.Pagada;
+                }
+                else if (totalPagado > 0)
+                {
+                    factura.Estado = EstadoFactura.ParcialmentePagada;
+                }
             }
 
-            _context.Pagos.Add(pago);
             await _context.SaveChangesAsync();
 
             return MappingFunctions.ToPagoDto(pago);
@@ -71,7 +86,7 @@ namespace Tlaoami.Application.Services
         {
             var pago = await _context.Pagos.FindAsync(id);
             if (pago != null)
-            {
+            { 
                 _context.Pagos.Remove(pago);
                 await _context.SaveChangesAsync();
             }

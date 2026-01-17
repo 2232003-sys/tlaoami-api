@@ -24,6 +24,7 @@ namespace Tlaoami.Domain.Entities
     public enum EstadoFactura
     {
         Pendiente,
+        ParcialmentePagada,
         Pagada,
         Vencida
     }

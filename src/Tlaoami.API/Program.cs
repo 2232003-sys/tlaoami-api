@@ -13,17 +13,20 @@ builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Configure DbContext to use the connection string from appsettings.json
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<TlaoamiDbContext>(options =>
-    options.UseSqlite("Data Source=tlaoami.db"));
+    options.UseSqlite(connectionString));
 
 var app = builder.Build();
 
-// Seed the database
+// Apply migrations and seed the database
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<TlaoamiDbContext>();
-    context.Database.EnsureCreated(); // Ensure the database is created
+    context.Database.Migrate(); // Apply pending migrations
     await DataSeeder.SeedAsync(context);
 }
 
