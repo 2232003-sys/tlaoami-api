@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Tlaoami.Application")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c1b7a390b1fb56bee3d6f5bc45bb90734dceb1f7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+367c4f853b91a31395ef5bf58330591a5aa2d84c")]
 [assembly: System.Reflection.AssemblyProductAttribute("Tlaoami.Application")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Tlaoami.Application")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

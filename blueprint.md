@@ -20,6 +20,16 @@ El proyecto sigue una arquitectura limpia con la siguiente estructura:
 *   **Tlaoami.Domain:** La capa de dominio que contiene las entidades principales y las interfaces de repositorio.
 *   **Tlaoami.Infrastructure:** La capa de infraestructura que gestiona el acceso a los datos con Entity Framework Core.
 
+## Lógica de Pagos
+
+1.  **DTO de Creación de Pagos:** Se creó un `PagoCreateDto` para estandarizar la entrada de datos al registrar un nuevo pago. Contiene `FacturaId`, `Monto` y `FechaPago`.
+2.  **Servicio de Pagos:** Se implementó el `PagoService` con un método `RegistrarPagoAsync`. Este servicio se encarga de:
+    *   Crear una nueva entidad `Pago`.
+    *   Asociar el pago a la factura correspondiente.
+    *   Actualizar el estado de la factura a "Pagada" si el monto total ha sido cubierto.
+3.  **Endpoint de la API:** Se expuso un único endpoint `POST /api/pagos` en `PagosController` para registrar nuevos pagos, manteniendo el controlador delgado y delegando la lógica de negocio al servicio de pagos.
+4.  **Estado de Cuenta Automático:** El estado de cuenta del alumno, accesible a través de la API, se actualiza automáticamente después de registrar un pago, ya que la lógica de cálculo del estado de cuenta se basa en los datos actualizados de facturas y pagos.
+
 ## Flujo de Solicitud Actual
 
 1.  **DTO de Estado de Cuenta:** Se creó un `EstadoCuentaDto` para encapsular los detalles del estado de cuenta del alumno, incluyendo el total facturado, el total pagado, el saldo pendiente y las listas de facturas pagadas y pendientes.

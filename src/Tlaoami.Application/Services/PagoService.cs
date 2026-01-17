@@ -1,95 +1,60 @@
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
-using Tlaoami.Application.Mappers;
 using Tlaoami.Domain.Entities;
 using Tlaoami.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
-namespace Tlaoami.Application.Services
+namespace Tlaoami.Application.Services;
+
+public class PagoService : IPagoService
 {
-    public class PagoService : IPagoService
+    private readonly TlaoamiDbContext _context;
+
+    public PagoService(TlaoamiDbContext context)
     {
-        private readonly TlaoamiDbContext _context;
+        _context = context;
+    }
 
-        public PagoService(TlaoamiDbContext context)
+    public async Task<PagoDto> RegistrarPagoAsync(PagoCreateDto pagoCreateDto)
+    {
+        var factura = await _context.Facturas.FindAsync(pagoCreateDto.FacturaId);
+        if (factura == null)
         {
-            _context = context;
+            throw new Exception("Factura no encontrada");
         }
 
-        public async Task<IEnumerable<PagoDto>> GetAllPagosAsync()
+        if (factura.Estado == "Pagada")
         {
-            var pagos = await _context.Pagos.ToListAsync();
-            return pagos.Select(MappingFunctions.ToPagoDto);
+            throw new Exception("La factura ya ha sido pagada.");
         }
 
-        public async Task<PagoDto?> GetPagoByIdAsync(Guid id)
+        var pago = new Pago
         {
-            var pago = await _context.Pagos.FindAsync(id);
-            return pago != null ? MappingFunctions.ToPagoDto(pago) : null;
-        }
+            Id = Guid.NewGuid(),
+            FacturaId = pagoCreateDto.FacturaId,
+            Monto = pagoCreateDto.Monto,
+            FechaPago = pagoCreateDto.FechaPago
+        };
 
-        public async Task<PagoDto> CreatePagoAsync(PagoDto pagoDto)
+        _context.Pagos.Add(pago);
+        await _context.SaveChangesAsync();
+
+        var totalPagado = await _context.Pagos
+            .Where(p => p.FacturaId == pagoCreateDto.FacturaId)
+            .SumAsync(p => p.Monto);
+
+        if (totalPagado >= factura.Monto)
         {
-            var pago = new Pago
-            {
-                FacturaId = pagoDto.FacturaId,
-                Monto = pagoDto.Monto,
-                FechaPago = pagoDto.FechaPago,
-                Metodo = (MetodoPago)Enum.Parse(typeof(MetodoPago), pagoDto.Metodo!, true)
-            };
-
-            _context.Pagos.Add(pago);
-
-            var factura = await _context.Facturas
-                .Include(f => f.Pagos)
-                .SingleOrDefaultAsync(f => f.Id == pagoDto.FacturaId);
-
-            if (factura != null)
-            {
-                // The new payment is already being tracked by EF Core's context,
-                // so it will be included in the sum.
-                var totalPagado = factura.Pagos.Sum(p => p.Monto) + pago.Monto;
-
-                if (totalPagado >= factura.Monto)
-                {
-                    factura.Estado = EstadoFactura.Pagada;
-                }
-                else if (totalPagado > 0)
-                {
-                    factura.Estado = EstadoFactura.ParcialmentePagada;
-                }
-            }
-
+            factura.Estado = "Pagada";
             await _context.SaveChangesAsync();
-
-            return MappingFunctions.ToPagoDto(pago);
         }
 
-        public async Task UpdatePagoAsync(Guid id, PagoDto pagoDto)
+        return new PagoDto
         {
-            var pago = await _context.Pagos.FindAsync(id);
-            if (pago != null)
-            {
-                pago.Monto = pagoDto.Monto;
-                pago.FechaPago = pagoDto.FechaPago;
-                pago.Metodo = (MetodoPago)Enum.Parse(typeof(MetodoPago), pagoDto.Metodo!, true);
-
-                await _context.SaveChangesAsync();
-            }
-        }
-
-        public async Task DeletePagoAsync(Guid id)
-        {
-            var pago = await _context.Pagos.FindAsync(id);
-            if (pago != null)
-            { 
-                _context.Pagos.Remove(pago);
-                await _context.SaveChangesAsync();
-            }
-        }
+            Id = pago.Id,
+            FacturaId = pago.FacturaId,
+            Monto = pago.Monto,
+            FechaPago = pago.FechaPago
+        };
     }
 }
