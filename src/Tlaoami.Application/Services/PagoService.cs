@@ -1,5 +1,6 @@
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Mappers;
 using Tlaoami.Domain.Entities;
 using Tlaoami.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +34,8 @@ public class PagoService : IPagoService
             Id = Guid.NewGuid(),
             FacturaId = pagoCreateDto.FacturaId,
             Monto = pagoCreateDto.Monto,
-            FechaPago = pagoCreateDto.FechaPago
+            FechaPago = pagoCreateDto.FechaPago,
+            Metodo = (MetodoPago)Enum.Parse(typeof(MetodoPago), pagoCreateDto.Metodo, true)
         };
 
         _context.Pagos.Add(pago);
@@ -49,12 +51,28 @@ public class PagoService : IPagoService
             await _context.SaveChangesAsync();
         }
 
-        return new PagoDto
+        return MappingFunctions.ToPagoDto(pago);
+    }
+
+    public async Task<IEnumerable<PagoDto>> GetPagosByFacturaIdAsync(Guid facturaId)
+    {
+        var pagos = await _context.Pagos
+            .Where(p => p.FacturaId == facturaId)
+            .OrderByDescending(p => p.FechaPago)
+            .ToListAsync();
+
+        return pagos.Select(MappingFunctions.ToPagoDto);
+    }
+
+    public async Task<PagoDto?> GetPagoByIdAsync(Guid id)
+    {
+        var pago = await _context.Pagos.FindAsync(id);
+        
+        if (pago == null)
         {
-            Id = pago.Id,
-            FacturaId = pago.FacturaId,
-            Monto = pago.Monto,
-            FechaPago = pago.FechaPago
-        };
+            return null;
+        }
+
+        return MappingFunctions.ToPagoDto(pago);
     }
 }

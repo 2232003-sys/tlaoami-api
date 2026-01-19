@@ -1,6 +1,7 @@
 using Tlaoami.Application.Dtos;
 using Tlaoami.Domain.Entities;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Tlaoami.Application.Mappers
 {
@@ -11,9 +12,12 @@ namespace Tlaoami.Application.Mappers
             return new AlumnoDto
             {
                 Id = alumno.Id,
+                Matricula = alumno.Matricula,
                 Nombre = alumno.Nombre,
                 Apellido = alumno.Apellido,
                 Email = alumno.Email,
+                Telefono = alumno.Telefono,
+                Activo = alumno.Activo,
                 FechaInscripcion = alumno.FechaInscripcion
             };
         }
@@ -43,6 +47,27 @@ namespace Tlaoami.Application.Mappers
                 Monto = pago.Monto,
                 FechaPago = pago.FechaPago,
                 Metodo = pago.Metodo.ToString()
+            };
+        }
+
+        public static FacturaDetalleDto ToFacturaDetalleDto(Factura factura)
+        {
+            var totalPagado = factura.Pagos?.Sum(p => p.Monto) ?? 0;
+            return new FacturaDetalleDto
+            {
+                Id = factura.Id,
+                AlumnoId = factura.AlumnoId,
+                AlumnoNombreCompleto = factura.Alumno != null 
+                    ? $"{factura.Alumno.Nombre} {factura.Alumno.Apellido}" 
+                    : null,
+                NumeroFactura = factura.NumeroFactura,
+                Monto = factura.Monto,
+                Saldo = factura.Monto - totalPagado,
+                TotalPagado = totalPagado,
+                FechaEmision = factura.FechaEmision,
+                FechaVencimiento = factura.FechaVencimiento,
+                Estado = factura.Estado.ToString(),
+                Pagos = factura.Pagos?.Select(ToPagoDto).ToList() ?? new List<PagoDto>()
             };
         }
 

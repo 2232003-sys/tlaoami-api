@@ -22,7 +22,9 @@ namespace Tlaoami.Application.Services
 
         public async Task<IEnumerable<AlumnoDto>> GetAllAlumnosAsync()
         {
-            var alumnos = await _context.Alumnos.ToListAsync();
+            var alumnos = await _context.Alumnos
+                .Where(a => a.Activo)
+                .ToListAsync();
             return alumnos.Select(MappingFunctions.ToAlumnoDto);
         }
 
@@ -30,6 +32,46 @@ namespace Tlaoami.Application.Services
         {
             var alumno = await _context.Alumnos.FindAsync(id);
             return alumno != null ? MappingFunctions.ToAlumnoDto(alumno) : null;
+        }
+
+        public async Task<AlumnoDto?> GetAlumnoByMatriculaAsync(string matricula)
+        {
+            var alumno = await _context.Alumnos
+                .FirstOrDefaultAsync(a => a.Matricula == matricula);
+            return alumno != null ? MappingFunctions.ToAlumnoDto(alumno) : null;
+        }
+
+        public async Task<AlumnoDto?> GetAlumnoConGrupoActualAsync(Guid id)
+        {
+            var alumno = await _context.Alumnos
+                .Include(a => a.AsignacionesGrupo)
+                .ThenInclude(ag => ag.Grupo)
+                .ThenInclude(g => g!.CicloEscolar)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (alumno == null)
+                return null;
+
+            var dto = MappingFunctions.ToAlumnoDto(alumno);
+
+            // Obtener grupo activo
+            var asignacionActiva = alumno.AsignacionesGrupo
+                ?.FirstOrDefault(ag => ag.Activo && ag.FechaFin == null);
+
+            if (asignacionActiva?.Grupo != null)
+            {
+                dto.GrupoActual = new GrupoDto
+                {
+                    Id = asignacionActiva.Grupo.Id,
+                    Nombre = asignacionActiva.Grupo.Nombre,
+                    Grado = asignacionActiva.Grupo.Grado,
+                    Turno = asignacionActiva.Grupo.Turno,
+                    CicloEscolarId = asignacionActiva.Grupo.CicloEscolarId,
+                    CicloNombre = asignacionActiva.Grupo.CicloEscolar?.Nombre
+                };
+            }
+
+            return dto;
         }
 
         public async Task<EstadoCuentaDto?> GetEstadoCuentaAsync(Guid id)
@@ -43,14 +85,18 @@ namespace Tlaoami.Application.Services
             return MappingFunctions.ToEstadoCuentaDto(alumno);
         }
 
-        public async Task<AlumnoDto> CreateAlumnoAsync(AlumnoDto alumnoDto)
+        public async Task<AlumnoDto> CreateAlumnoAsync(AlumnoCreateDto dto)
         {
             var alumno = new Alumno
             {
-                Nombre = alumnoDto.Nombre,
-                Apellido = alumnoDto.Apellido,
-                Email = alumnoDto.Email,
-                FechaInscripcion = alumnoDto.FechaInscripcion
+                Id = Guid.NewGuid(),
+                Matricula = dto.Matricula,
+                Nombre = dto.Nombre,
+                Apellido = dto.Apellido,
+                Email = dto.Email,
+                Telefono = dto.Telefono,
+                Activo = true,
+                FechaInscripcion = DateTime.UtcNow
             };
 
             _context.Alumnos.Add(alumno);
@@ -59,27 +105,38 @@ namespace Tlaoami.Application.Services
             return MappingFunctions.ToAlumnoDto(alumno);
         }
 
-        public async Task UpdateAlumnoAsync(Guid id, AlumnoDto alumnoDto)
+        public async Task<AlumnoDto> UpdateAlumnoAsync(Guid id, AlumnoUpdateDto dto)
         {
             var alumno = await _context.Alumnos.FindAsync(id);
-            if (alumno != null)
-            {
-                alumno.Nombre = alumnoDto.Nombre;
-                alumno.Apellido = alumnoDto.Apellido;
-                alumno.Email = alumnoDto.Email;
+            if (alumno == null)
+                throw new Exception("Alumno no encontrado");
 
-                await _context.SaveChangesAsync();
-            }
+            if (!string.IsNullOrEmpty(dto.Nombre))
+                alumno.Nombre = dto.Nombre;
+            if (!string.IsNullOrEmpty(dto.Apellido))
+                alumno.Apellido = dto.Apellido;
+            if (!string.IsNullOrEmpty(dto.Email))
+                alumno.Email = dto.Email;
+            if (!string.IsNullOrEmpty(dto.Telefono))
+                alumno.Telefono = dto.Telefono;
+            if (dto.Activo.HasValue)
+                alumno.Activo = dto.Activo.Value;
+
+            await _context.SaveChangesAsync();
+
+            return MappingFunctions.ToAlumnoDto(alumno);
         }
 
-        public async Task DeleteAlumnoAsync(Guid id)
+        public async Task<bool> DeleteAlumnoAsync(Guid id)
         {
             var alumno = await _context.Alumnos.FindAsync(id);
-            if (alumno != null)
-            {
-                _context.Alumnos.Remove(alumno);
-                await _context.SaveChangesAsync();
-            }
+            if (alumno == null)
+                return false;
+
+            alumno.Activo = false;
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

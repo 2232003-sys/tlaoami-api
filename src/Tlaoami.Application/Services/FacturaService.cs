@@ -32,6 +32,39 @@ namespace Tlaoami.Application.Services
             return factura != null ? MappingFunctions.ToFacturaDto(factura) : null;
         }
 
+        public async Task<FacturaDetalleDto?> GetFacturaDetalleByIdAsync(Guid id)
+        {
+            var factura = await _context.Facturas
+                .Include(f => f.Alumno)
+                .Include(f => f.Pagos)
+                .FirstOrDefaultAsync(f => f.Id == id);
+            
+            return factura != null ? MappingFunctions.ToFacturaDetalleDto(factura) : null;
+        }
+
+        public async Task<IEnumerable<FacturaDetalleDto>> GetAllFacturasDetalleAsync()
+        {
+            var facturas = await _context.Facturas
+                .Include(f => f.Alumno)
+                .Include(f => f.Pagos)
+                .OrderByDescending(f => f.FechaEmision)
+                .ToListAsync();
+            
+            return facturas.Select(MappingFunctions.ToFacturaDetalleDto);
+        }
+
+        public async Task<IEnumerable<FacturaDetalleDto>> GetFacturasByAlumnoIdAsync(Guid alumnoId)
+        {
+            var facturas = await _context.Facturas
+                .Include(f => f.Alumno)
+                .Include(f => f.Pagos)
+                .Where(f => f.AlumnoId == alumnoId)
+                .OrderByDescending(f => f.FechaEmision)
+                .ToListAsync();
+            
+            return facturas.Select(MappingFunctions.ToFacturaDetalleDto);
+        }
+
         public async Task<FacturaDto> CreateFacturaAsync(FacturaDto facturaDto)
         {
             var factura = new Factura

@@ -8,6 +8,9 @@ public class TlaoamiDbContext : DbContext
     }
 
     public DbSet<Alumno> Alumnos { get; set; }
+    public DbSet<CicloEscolar> CiclosEscolares { get; set; }
+    public DbSet<Grupo> Grupos { get; set; }
+    public DbSet<AlumnoGrupo> AsignacionesGrupo { get; set; }
     public DbSet<Factura> Facturas { get; set; }
     public DbSet<Pago> Pagos { get; set; }
     public DbSet<PaymentIntent> PaymentIntents { get; set; }
@@ -20,8 +23,42 @@ public class TlaoamiDbContext : DbContext
 
         // Alumno configuration
         modelBuilder.Entity<Alumno>()
+            .HasIndex(a => a.Matricula)
+            .IsUnique();
+
+        modelBuilder.Entity<Alumno>()
             .HasIndex(a => a.Email)
             .IsUnique();
+
+        // CicloEscolar configuration
+        modelBuilder.Entity<CicloEscolar>()
+            .HasMany(c => c.Grupos)
+            .WithOne(g => g.CicloEscolar)
+            .HasForeignKey(g => g.CicloEscolarId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Grupo configuration
+        modelBuilder.Entity<Grupo>()
+            .HasMany(g => g.Alumnos)
+            .WithOne(ag => ag.Grupo)
+            .HasForeignKey(ag => ag.GrupoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // AlumnoGrupo configuration
+        modelBuilder.Entity<AlumnoGrupo>()
+            .HasOne(ag => ag.Alumno)
+            .WithMany(a => a.AsignacionesGrupo)
+            .HasForeignKey(ag => ag.AlumnoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Index para consultas de asignaciones activas
+        modelBuilder.Entity<AlumnoGrupo>()
+            .HasIndex(ag => new { ag.AlumnoId, ag.Activo })
+            .HasDatabaseName("IX_AlumnoGrupo_AlumnoId_Activo");
+
+        modelBuilder.Entity<AlumnoGrupo>()
+            .HasIndex(ag => new { ag.GrupoId, ag.Activo })
+            .HasDatabaseName("IX_AlumnoGrupo_GrupoId_Activo");
 
         // Factura configuration
         modelBuilder.Entity<Factura>()
@@ -47,6 +84,11 @@ public class TlaoamiDbContext : DbContext
             .WithMany(f => f.Pagos)
             .HasForeignKey(p => p.FacturaId);
 
+        modelBuilder.Entity<Pago>()
+            .HasIndex(p => p.PaymentIntentId)
+            .IsUnique()
+            .HasFilter("[PaymentIntentId] IS NOT NULL");
+
         // PaymentIntent configuration
         modelBuilder.Entity<PaymentIntent>()
             .Property(pi => pi.Metodo)
@@ -69,6 +111,10 @@ public class TlaoamiDbContext : DbContext
         modelBuilder.Entity<MovimientoBancario>()
             .Property(mb => mb.Estado)
             .HasConversion<string>();
+
+        modelBuilder.Entity<MovimientoBancario>()
+            .HasIndex(mb => mb.HashMovimiento)
+            .IsUnique();
 
         // MovimientoConciliacion configuration
         modelBuilder.Entity<MovimientoConciliacion>()

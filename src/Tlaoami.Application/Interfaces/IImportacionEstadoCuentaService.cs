@@ -11,6 +11,8 @@ public interface IImportacionEstadoCuentaService
         EstadoConciliacion? estado,
         TipoMovimiento? tipo,
         DateTime? desde,
-        DateTime? hasta
+        DateTime? hasta,
+        int page = 1,
+        int pageSize = 50
     );
 }

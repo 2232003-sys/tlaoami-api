@@ -36,7 +36,7 @@ namespace Tlaoami.Application.Services
                 movimientosParseados = registrosCrudos.Select(row => new MovimientoCsvRow
                 {
                     Fecha = DateTime.Parse(row.Fecha, cultura),
-                    Descripcion = row.Descripcion?.Trim(),
+                    Descripcion = row.Descripcion?.Trim() ?? string.Empty,
                     Deposito = ParseCurrency(row.Deposito),
                     Retiro = ParseCurrency(row.Retiro),
                     Saldo = ParseCurrency(row.Saldo) ?? 0m
@@ -92,7 +92,9 @@ namespace Tlaoami.Application.Services
             EstadoConciliacion? estado,
             TipoMovimiento? tipo,
             DateTime? desde,
-            DateTime? hasta)
+            DateTime? hasta,
+            int page = 1,
+            int pageSize = 50)
         {
             var query = _context.MovimientosBancarios.AsQueryable();
 
@@ -117,6 +119,9 @@ namespace Tlaoami.Application.Services
             }
 
             return await query
+                .OrderByDescending(m => m.Fecha)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Select(m => new MovimientoBancarioDto
                 {
                     Id = m.Id,
@@ -133,7 +138,24 @@ namespace Tlaoami.Application.Services
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;
-            return decimal.Parse(value, NumberStyles.Currency, new CultureInfo("es-MX"));
+
+            // Limpiar: remover $, espacios, comas, paréntesis, etc.
+            var cleaned = value.Trim();
+            cleaned = Regex.Replace(cleaned, @"[$,\s]", "");
+            
+            // Detectar negativos por paréntesis
+            var isNegative = cleaned.StartsWith("(") && cleaned.EndsWith(")");
+            if (isNegative)
+            {
+                cleaned = cleaned.Substring(1, cleaned.Length - 2);
+            }
+
+            if (decimal.TryParse(cleaned, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result))
+            {
+                return isNegative ? -result : result;
+            }
+
+            return null;
         }
 
         private string GenerarHash(DateTime fecha, decimal monto, string descripcion)
@@ -155,17 +177,17 @@ namespace Tlaoami.Application.Services
 
         private class MovimientoCsvRawRow
         {
-            public string Fecha { get; set; }
-            public string Descripcion { get; set; }
-            public string Deposito { get; set; }
-            public string Retiro { get; set; }
-            public string Saldo { get; set; }
+            public string Fecha { get; set; } = string.Empty;
+            public string Descripcion { get; set; } = string.Empty;
+            public string Deposito { get; set; } = string.Empty;
+            public string Retiro { get; set; } = string.Empty;
+            public string Saldo { get; set; } = string.Empty;
         }
 
         private class MovimientoCsvRow
         {
             public DateTime Fecha { get; set; }
-            public string Descripcion { get; set; }
+            public string Descripcion { get; set; } = string.Empty;
             public decimal? Deposito { get; set; }
             public decimal? Retiro { get; set; }
             public decimal Saldo { get; set; }

@@ -21,12 +21,30 @@ namespace Tlaoami.API.Controllers
             try
             {
                 var pagoDto = await _pagoService.RegistrarPagoAsync(pagoCreateDto);
-                return CreatedAtAction(nameof(RegistrarPago), new { id = pagoDto.Id }, pagoDto);
+                return CreatedAtAction(nameof(GetPago), new { id = pagoDto.Id }, pagoDto);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<PagoDto>> GetPago(Guid id)
+        {
+            var pago = await _pagoService.GetPagoByIdAsync(id);
+            if (pago == null)
+            {
+                return NotFound();
+            }
+            return Ok(pago);
+        }
+
+        [HttpGet("factura/{facturaId}")]
+        public async Task<ActionResult<IEnumerable<PagoDto>>> GetPagosByFactura(Guid facturaId)
+        {
+            var pagos = await _pagoService.GetPagosByFacturaIdAsync(facturaId);
+            return Ok(pagos);
         }
     }
 }

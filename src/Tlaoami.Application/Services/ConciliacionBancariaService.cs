@@ -54,11 +54,18 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
 
         if (facturaId.HasValue)
         {
-            var facturaExiste = await _context.Facturas.AnyAsync(f => f.Id == facturaId.Value);
-            if (!facturaExiste)
+            var factura = await _context.Facturas.FirstOrDefaultAsync(f => f.Id == facturaId.Value);
+            if (factura == null)
             {
                 _logger.LogWarning("Intento de conciliar con factura inexistente: {FacturaId}", facturaId.Value);
                 throw new ApplicationException($"Factura con ID {facturaId.Value} no encontrada");
+            }
+
+            // Validar que la factura no esté completamente pagada
+            if (factura.Estado == EstadoFactura.Pagada)
+            {
+                _logger.LogWarning("Intento de conciliar movimiento con factura ya pagada: {FacturaId}", facturaId.Value);
+                throw new InvalidOperationException("No se puede conciliar un movimiento con una factura ya pagada");
             }
         }
 

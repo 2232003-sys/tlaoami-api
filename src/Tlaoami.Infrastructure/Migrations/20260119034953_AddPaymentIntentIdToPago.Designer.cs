@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -9,9 +10,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Tlaoami.Infrastructure.Migrations
 {
     [DbContext(typeof(TlaoamiDbContext))]
-    partial class TlaoamiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119034953_AddPaymentIntentIdToPago")]
+    partial class AddPaymentIntentIdToPago
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -22,28 +25,19 @@ namespace Tlaoami.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("Activo")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Apellido")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("FechaInscripcion")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Matricula")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Nombre")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Telefono")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -51,65 +45,7 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("Matricula")
-                        .IsUnique();
-
                     b.ToTable("Alumnos");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.AlumnoGrupo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<Guid>("AlumnoId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("FechaFin")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("FechaInicio")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("GrupoId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AlumnoId", "Activo")
-                        .HasDatabaseName("IX_AlumnoGrupo_AlumnoId_Activo");
-
-                    b.HasIndex("GrupoId", "Activo")
-                        .HasDatabaseName("IX_AlumnoGrupo_GrupoId_Activo");
-
-                    b.ToTable("AsignacionesGrupo");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.CicloEscolar", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime>("FechaFin")
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("FechaInicio")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Nombre")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CiclosEscolares");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
@@ -148,31 +84,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.ToTable("Facturas");
                 });
 
-            modelBuilder.Entity("Tlaoami.Domain.Entities.Grupo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("CicloEscolarId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Grado")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Nombre")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Turno")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CicloEscolarId");
-
-                    b.ToTable("Grupos");
-                });
-
             modelBuilder.Entity("Tlaoami.Domain.Entities.MovimientoBancario", b =>
                 {
                     b.Property<Guid>("Id")
@@ -205,9 +116,6 @@ namespace Tlaoami.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("HashMovimiento")
-                        .IsUnique();
 
                     b.ToTable("MovimientosBancarios");
                 });
@@ -325,25 +233,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.ToTable("PaymentIntents");
                 });
 
-            modelBuilder.Entity("Tlaoami.Domain.Entities.AlumnoGrupo", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
-                        .WithMany("AsignacionesGrupo")
-                        .HasForeignKey("AlumnoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Tlaoami.Domain.Entities.Grupo", "Grupo")
-                        .WithMany("Alumnos")
-                        .HasForeignKey("GrupoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Alumno");
-
-                    b.Navigation("Grupo");
-                });
-
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
                 {
                     b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
@@ -353,17 +242,6 @@ namespace Tlaoami.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Alumno");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.Grupo", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.CicloEscolar", "CicloEscolar")
-                        .WithMany("Grupos")
-                        .HasForeignKey("CicloEscolarId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CicloEscolar");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.MovimientoConciliacion", b =>
@@ -413,24 +291,12 @@ namespace Tlaoami.Infrastructure.Migrations
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Alumno", b =>
                 {
-                    b.Navigation("AsignacionesGrupo");
-
                     b.Navigation("Facturas");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.CicloEscolar", b =>
-                {
-                    b.Navigation("Grupos");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
                 {
                     b.Navigation("Pagos");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.Grupo", b =>
-                {
-                    b.Navigation("Alumnos");
                 });
 #pragma warning restore 612, 618
         }

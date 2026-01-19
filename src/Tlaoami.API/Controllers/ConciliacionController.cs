@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Tlaoami.Application.Contracts;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Domain.Entities;
 
 namespace Tlaoami.API.Controllers
 {
@@ -11,15 +13,34 @@ namespace Tlaoami.API.Controllers
         private readonly IConciliacionBancariaService _conciliacionService;
         private readonly ISugerenciasConciliacionService _sugerenciasService;
         private readonly IConsultaConciliacionesService _consultaService;
+        private readonly IImportacionEstadoCuentaService _importacionService;
 
         public ConciliacionController(
             IConciliacionBancariaService conciliacionService,
             ISugerenciasConciliacionService sugerenciasService,
-            IConsultaConciliacionesService consultaService)
+            IConsultaConciliacionesService consultaService,
+            IImportacionEstadoCuentaService importacionService)
         {
             _conciliacionService = conciliacionService;
             _sugerenciasService = sugerenciasService;
             _consultaService = consultaService;
+            _importacionService = importacionService;
+        }
+
+        [HttpGet("movimientos")]
+        public async Task<ActionResult<IEnumerable<MovimientoBancarioDto>>> GetMovimientos(
+            [FromQuery] EstadoConciliacion? estado,
+            [FromQuery] TipoMovimiento? tipo,
+            [FromQuery] DateTime? desde,
+            [FromQuery] DateTime? hasta,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 500) pageSize = 50;
+
+            var movimientos = await _importacionService.GetMovimientosBancariosAsync(estado, tipo, desde, hasta, page, pageSize);
+            return Ok(movimientos);
         }
 
         [HttpPost("conciliar")]

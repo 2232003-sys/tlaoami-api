@@ -9,6 +9,7 @@ namespace Tlaoami.Domain.Entities
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; }
         public MetodoPago Metodo { get; set; }
+        public Guid? PaymentIntentId { get; set; }
         public Factura? Factura { get; set; }
     }
 

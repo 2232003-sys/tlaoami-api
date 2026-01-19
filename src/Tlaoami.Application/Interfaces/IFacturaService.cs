@@ -9,6 +9,9 @@ namespace Tlaoami.Application.Interfaces
     {
         Task<IEnumerable<FacturaDto>> GetAllFacturasAsync();
         Task<FacturaDto?> GetFacturaByIdAsync(Guid id);
+        Task<FacturaDetalleDto?> GetFacturaDetalleByIdAsync(Guid id);
+        Task<IEnumerable<FacturaDetalleDto>> GetAllFacturasDetalleAsync();
+        Task<IEnumerable<FacturaDetalleDto>> GetFacturasByAlumnoIdAsync(Guid alumnoId);
         Task<FacturaDto> CreateFacturaAsync(FacturaDto facturaDto);
         Task UpdateFacturaAsync(Guid id, FacturaDto facturaDto);
         Task DeleteFacturaAsync(Guid id);

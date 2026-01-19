@@ -11,11 +11,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IAlumnoService, AlumnoService>();
 builder.Services.AddScoped<IFacturaService, FacturaService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
+builder.Services.AddScoped<ICicloEscolarService, CicloEscolarService>();
+builder.Services.AddScoped<IGrupoService, GrupoService>();
+builder.Services.AddScoped<IAsignacionGrupoService, AsignacionGrupoService>();
 builder.Services.AddScoped<IConciliacionBancariaService, ConciliacionBancariaService>();
 builder.Services.AddScoped<ISugerenciasConciliacionService, SugerenciasConciliacionService>();
 builder.Services.AddScoped<IConsultaConciliacionesService, ConsultaConciliacionesService>();
 builder.Services.AddScoped<IPagosOnlineService, PagosOnlineService>();
 builder.Services.AddScoped<IPagoOnlineProvider, FakePagoOnlineProvider>();
+
+// Configure CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFront", builder =>
+    {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,6 +59,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowFront");
 
 app.UseAuthorization();
 
