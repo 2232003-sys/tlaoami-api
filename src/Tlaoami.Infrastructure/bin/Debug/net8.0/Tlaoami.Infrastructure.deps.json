@@ -794,10 +794,7 @@
       "System.Threading.Channels/6.0.0": {},
       "Tlaoami.Domain/1.0.0": {
         "runtime": {
-          "Tlaoami.Domain.dll": {
-            "assemblyVersion": "1.0.0",
-            "fileVersion": "1.0.0.0"
-          }
+          "Tlaoami.Domain.dll": {}
         }
       }
     }

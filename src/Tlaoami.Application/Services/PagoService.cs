@@ -23,7 +23,7 @@ public class PagoService : IPagoService
             throw new Exception("Factura no encontrada");
         }
 
-        if (factura.Estado == "Pagada")
+        if (factura.Estado == EstadoFactura.Pagada)
         {
             throw new Exception("La factura ya ha sido pagada.");
         }
@@ -45,7 +45,7 @@ public class PagoService : IPagoService
 
         if (totalPagado >= factura.Monto)
         {
-            factura.Estado = "Pagada";
+            factura.Estado = EstadoFactura.Pagada;
             await _context.SaveChangesAsync();
         }
 

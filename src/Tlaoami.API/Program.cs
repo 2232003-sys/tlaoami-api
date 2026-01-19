@@ -1,7 +1,9 @@
 using Tlaoami.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Interfaces.PagosOnline;
 using Tlaoami.Application.Services;
+using Tlaoami.Application.Services.PagosOnline;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<IAlumnoService, AlumnoService>();
 builder.Services.AddScoped<IFacturaService, FacturaService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
+builder.Services.AddScoped<IConciliacionBancariaService, ConciliacionBancariaService>();
+builder.Services.AddScoped<ISugerenciasConciliacionService, SugerenciasConciliacionService>();
+builder.Services.AddScoped<IConsultaConciliacionesService, ConsultaConciliacionesService>();
+builder.Services.AddScoped<IPagosOnlineService, PagosOnlineService>();
+builder.Services.AddScoped<IPagoOnlineProvider, FakePagoOnlineProvider>();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

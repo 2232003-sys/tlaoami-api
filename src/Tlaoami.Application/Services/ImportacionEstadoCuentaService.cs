@@ -9,7 +9,6 @@ using System.Text.RegularExpressions;
 using Tlaoami.Application.Contracts;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Domain.Entities;
-using Tlaoami.Domain.Enumerations;
 using Tlaoami.Infrastructure;
 
 namespace Tlaoami.Application.Services
@@ -70,12 +69,10 @@ namespace Tlaoami.Application.Services
                     Fecha = movimientoCsv.Fecha,
                     Descripcion = movimientoCsv.Descripcion,
                     Monto = monto.Value,
-                    SaldoAlMomento = movimientoCsv.Saldo,
+                    Saldo = movimientoCsv.Saldo,
                     Tipo = esDeposito ? TipoMovimiento.Deposito : TipoMovimiento.Retiro,
                     Estado = esDeposito ? EstadoConciliacion.NoConciliado : EstadoConciliacion.Ignorado,
-                    HashMovimiento = hash,
-                    FechaCreacion = DateTime.UtcNow,
-                    FechaActualizacion = DateTime.UtcNow
+                    HashMovimiento = hash
                 };
 
                 await _context.MovimientosBancarios.AddAsync(nuevoMovimiento);

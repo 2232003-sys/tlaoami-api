@@ -2846,19 +2846,19 @@
     ]
   },
   "packageFolders": {
-    "/home/user/.nuget/packages/": {}
+    "/Users/erik/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/user/tlatoami/src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj",
+      "projectUniqueName": "/Users/erik/Library/CloudStorage/OneDrive-Personal/2026/Intento 3/tlaoami-api/src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj",
       "projectName": "Tlaoami.Infrastructure",
-      "projectPath": "/home/user/tlatoami/src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj",
-      "packagesPath": "/home/user/.nuget/packages/",
-      "outputPath": "/home/user/tlatoami/src/Tlaoami.Infrastructure/obj/",
+      "projectPath": "/Users/erik/Library/CloudStorage/OneDrive-Personal/2026/Intento 3/tlaoami-api/src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj",
+      "packagesPath": "/Users/erik/.nuget/packages/",
+      "outputPath": "/Users/erik/Library/CloudStorage/OneDrive-Personal/2026/Intento 3/tlaoami-api/src/Tlaoami.Infrastructure/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/user/.nuget/NuGet/NuGet.Config"
+        "/Users/erik/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net8.0"
@@ -2870,8 +2870,8 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "projectReferences": {
-            "/home/user/tlatoami/src/Tlaoami.Domain/Tlaoami.Domain.csproj": {
-              "projectPath": "/home/user/tlatoami/src/Tlaoami.Domain/Tlaoami.Domain.csproj"
+            "/Users/erik/Library/CloudStorage/OneDrive-Personal/2026/Intento 3/tlaoami-api/src/Tlaoami.Domain/Tlaoami.Domain.csproj": {
+              "projectPath": "/Users/erik/Library/CloudStorage/OneDrive-Personal/2026/Intento 3/tlaoami-api/src/Tlaoami.Domain/Tlaoami.Domain.csproj"
             }
           }
         }
@@ -2880,11 +2880,6 @@
         "warnAsError": [
           "NU1605"
         ]
-      },
-      "restoreAuditProperties": {
-        "enableAudit": "true",
-        "auditLevel": "low",
-        "auditMode": "direct"
       }
     },
     "frameworks": {
@@ -2926,7 +2921,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/nix/store/h4nvjwvcdzkp20lsd28yl6mb28hia7zg-dotnet-sdk-8.0.408/share/dotnet/sdk/8.0.408/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/opt/homebrew/Cellar/dotnet@8/8.0.123/libexec/sdk/8.0.123/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

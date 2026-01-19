@@ -10,6 +10,9 @@ public class TlaoamiDbContext : DbContext
     public DbSet<Alumno> Alumnos { get; set; }
     public DbSet<Factura> Facturas { get; set; }
     public DbSet<Pago> Pagos { get; set; }
+    public DbSet<PaymentIntent> PaymentIntents { get; set; }
+    public DbSet<MovimientoBancario> MovimientosBancarios { get; set; }
+    public DbSet<MovimientoConciliacion> MovimientosConciliacion { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,5 +46,47 @@ public class TlaoamiDbContext : DbContext
             .HasOne(p => p.Factura)
             .WithMany(f => f.Pagos)
             .HasForeignKey(p => p.FacturaId);
+
+        // PaymentIntent configuration
+        modelBuilder.Entity<PaymentIntent>()
+            .Property(pi => pi.Metodo)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<PaymentIntent>()
+            .Property(pi => pi.Estado)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<PaymentIntent>()
+            .HasOne<Factura>()
+            .WithMany()
+            .HasForeignKey(pi => pi.FacturaId);
+
+        // MovimientoBancario configuration
+        modelBuilder.Entity<MovimientoBancario>()
+            .Property(mb => mb.Tipo)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<MovimientoBancario>()
+            .Property(mb => mb.Estado)
+            .HasConversion<string>();
+
+        // MovimientoConciliacion configuration
+        modelBuilder.Entity<MovimientoConciliacion>()
+            .HasOne(mc => mc.MovimientoBancario)
+            .WithMany()
+            .HasForeignKey(mc => mc.MovimientoBancarioId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MovimientoConciliacion>()
+            .HasOne(mc => mc.Alumno)
+            .WithMany()
+            .HasForeignKey(mc => mc.AlumnoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MovimientoConciliacion>()
+            .HasOne(mc => mc.Factura)
+            .WithMany()
+            .HasForeignKey(mc => mc.FacturaId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

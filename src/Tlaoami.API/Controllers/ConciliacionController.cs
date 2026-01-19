@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
-using Tlaoami.Domain.Enumerations;
 
 namespace Tlaoami.API.Controllers
 {
@@ -8,34 +8,99 @@ namespace Tlaoami.API.Controllers
     [Route("api/v1/conciliacion")]
     public class ConciliacionController : ControllerBase
     {
-        private readonly IImportacionEstadoCuentaService _importacionService;
+        private readonly IConciliacionBancariaService _conciliacionService;
+        private readonly ISugerenciasConciliacionService _sugerenciasService;
+        private readonly IConsultaConciliacionesService _consultaService;
 
-        public ConciliacionController(IImportacionEstadoCuentaService importacionService)
+        public ConciliacionController(
+            IConciliacionBancariaService conciliacionService,
+            ISugerenciasConciliacionService sugerenciasService,
+            IConsultaConciliacionesService consultaService)
         {
-            _importacionService = importacionService;
+            _conciliacionService = conciliacionService;
+            _sugerenciasService = sugerenciasService;
+            _consultaService = consultaService;
         }
 
-        [HttpPost("importar-estado-cuenta")]
-        public async Task<IActionResult> ImportarEstadoDeCuenta(IFormFile archivoCsv)
+        [HttpPost("conciliar")]
+        public async Task<ActionResult> Conciliar([FromBody] ConciliarRequest request)
         {
-            if (archivoCsv == null || archivoCsv.Length == 0)
+            try
             {
-                return BadRequest("El archivo no puede estar vacío.");
+                await _conciliacionService.ConciliarMovimientoAsync(
+                    request.MovimientoBancarioId,
+                    request.AlumnoId,
+                    request.FacturaId,
+                    request.Comentario);
+                
+                return Ok(new { message = "Movimiento conciliado correctamente" });
             }
-
-            var resultado = await _importacionService.ImportarAsync(archivoCsv);
-            return Ok(resultado);
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
-        [HttpGet("movimientos")]
-        public async Task<IActionResult> GetMovimientosBancarios(
-            [FromQuery] EstadoConciliacion? estado,
-            [FromQuery] TipoMovimiento? tipo,
-            [FromQuery] DateTime? desde,
-            [FromQuery] DateTime? hasta)
+        [HttpPost("revertir")]
+        public async Task<ActionResult> Revertir([FromBody] RevertirRequest request)
         {
-            var movimientos = await _importacionService.GetMovimientosBancariosAsync(estado, tipo, desde, hasta);
-            return Ok(movimientos);
+            try
+            {
+                await _conciliacionService.RevertirConciliacionAsync(request.MovimientoBancarioId);
+                return Ok(new { message = "Conciliación revertida correctamente" });
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("{movimientoBancarioId}/sugerencias")]
+        public async Task<ActionResult<List<SugerenciaConciliacionDto>>> GetSugerencias(Guid movimientoBancarioId)
+        {
+            try
+            {
+                var sugerencias = await _sugerenciasService.GetSugerenciasAsync(movimientoBancarioId);
+                return Ok(sugerencias);
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("conciliados")]
+        public async Task<ActionResult<List<ConciliacionDetalleDto>>> GetConciliados([FromQuery] DateTime? desde, [FromQuery] DateTime? hasta)
+        {
+            try
+            {
+                var conciliaciones = await _consultaService.GetConciliacionesAsync(desde, hasta);
+                return Ok(conciliaciones);
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
     }
+
+    public record ConciliarRequest(
+        Guid MovimientoBancarioId,
+        Guid? AlumnoId,
+        Guid? FacturaId,
+        string? Comentario);
+
+    public record RevertirRequest(Guid MovimientoBancarioId);
 }

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Tlaoami.Application.Contracts;
-using Tlaoami.Domain.Enumerations;
+using Tlaoami.Domain.Entities;
 
 namespace Tlaoami.Application.Interfaces;
 

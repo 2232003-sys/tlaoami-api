@@ -1,4 +1,4 @@
-using Tlaoami.Domain.Enumerations;
+using Tlaoami.Domain.Entities;
 
 namespace Tlaoami.Application.Contracts;
 

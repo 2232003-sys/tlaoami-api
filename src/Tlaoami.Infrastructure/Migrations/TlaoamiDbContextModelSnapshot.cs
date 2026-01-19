@@ -81,6 +81,74 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.ToTable("Facturas");
                 });
 
+            modelBuilder.Entity("Tlaoami.Domain.Entities.MovimientoBancario", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HashMovimiento")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Saldo")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MovimientosBancarios");
+                });
+
+            modelBuilder.Entity("Tlaoami.Domain.Entities.MovimientoConciliacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("AlumnoId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Comentario")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("FacturaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("FechaConciliacion")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MovimientoBancarioId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AlumnoId");
+
+                    b.HasIndex("FacturaId");
+
+                    b.HasIndex("MovimientoBancarioId");
+
+                    b.ToTable("MovimientosConciliacion");
+                });
+
             modelBuilder.Entity("Tlaoami.Domain.Entities.Pago", b =>
                 {
                     b.Property<Guid>("Id")
@@ -107,6 +175,54 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.ToTable("Pagos");
                 });
 
+            modelBuilder.Entity("Tlaoami.Domain.Entities.PaymentIntent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ActualizadoEnUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ClabeDestino")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreadoEnUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExpiraEnUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FacturaId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Metodo")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Monto")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Proveedor")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProveedorReferencia")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReferenciaSpei")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FacturaId");
+
+                    b.ToTable("PaymentIntents");
+                });
+
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
                 {
                     b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
@@ -118,6 +234,31 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.Navigation("Alumno");
                 });
 
+            modelBuilder.Entity("Tlaoami.Domain.Entities.MovimientoConciliacion", b =>
+                {
+                    b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
+                        .WithMany()
+                        .HasForeignKey("AlumnoId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Tlaoami.Domain.Entities.Factura", "Factura")
+                        .WithMany()
+                        .HasForeignKey("FacturaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Tlaoami.Domain.Entities.MovimientoBancario", "MovimientoBancario")
+                        .WithMany()
+                        .HasForeignKey("MovimientoBancarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Alumno");
+
+                    b.Navigation("Factura");
+
+                    b.Navigation("MovimientoBancario");
+                });
+
             modelBuilder.Entity("Tlaoami.Domain.Entities.Pago", b =>
                 {
                     b.HasOne("Tlaoami.Domain.Entities.Factura", "Factura")
@@ -127,6 +268,15 @@ namespace Tlaoami.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Factura");
+                });
+
+            modelBuilder.Entity("Tlaoami.Domain.Entities.PaymentIntent", b =>
+                {
+                    b.HasOne("Tlaoami.Domain.Entities.Factura", null)
+                        .WithMany()
+                        .HasForeignKey("FacturaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Alumno", b =>

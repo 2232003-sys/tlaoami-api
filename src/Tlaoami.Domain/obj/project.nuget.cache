@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "KCpRQ0IG9qY=",
+  "dgSpecHash": "zeHT4wYDkeGdfWaKOIRv04qjEQHMSEIYGMIFpSBlshgcsOpKsEgTozS1Ucfn3iirJ2cn0TpIC+eNfQ/PYTD3+g==",
   "success": true,
-  "projectFilePath": "/home/user/tlatoami/src/Tlaoami.Domain/Tlaoami.Domain.csproj",
+  "projectFilePath": "/Users/erik/Library/CloudStorage/OneDrive-Personal/2026/Intento 3/tlaoami-api/src/Tlaoami.Domain/Tlaoami.Domain.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }
