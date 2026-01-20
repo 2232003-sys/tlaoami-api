@@ -17,6 +17,10 @@ namespace Tlaoami.Domain.Entities
         public Guid? SalonId { get; set; }
         public Salon? Salon { get; set; }
 
+        // Relación con Docente Titular (Fase 1 - Primaria)
+        public Guid? DocenteTitularId { get; set; }
+        public User? DocenteTitular { get; set; }
+
         public ICollection<AlumnoGrupo> Alumnos { get; set; } = new List<AlumnoGrupo>();
     }
 }

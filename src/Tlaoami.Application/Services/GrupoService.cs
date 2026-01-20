@@ -24,6 +24,7 @@ namespace Tlaoami.Application.Services
             var grupos = await _context.Grupos
                 .Include(g => g.CicloEscolar)
                 .Include(g => g.Salon)
+                .Include(g => g.DocenteTitular)
                 .ToListAsync();
             return grupos.Select(MapToDto);
         }
@@ -33,6 +34,7 @@ namespace Tlaoami.Application.Services
             var grupos = await _context.Grupos
                 .Include(g => g.CicloEscolar)
                 .Include(g => g.Salon)
+                .Include(g => g.DocenteTitular)
                 .Where(g => g.CicloEscolarId == cicloId)
                 .ToListAsync();
             return grupos.Select(MapToDto);
@@ -43,6 +45,7 @@ namespace Tlaoami.Application.Services
             var grupo = await _context.Grupos
                 .Include(g => g.CicloEscolar)
                 .Include(g => g.Salon)
+                .Include(g => g.DocenteTitular)
                 .FirstOrDefaultAsync(g => g.Id == id);
             return grupo != null ? MapToDto(grupo) : null;
         }
@@ -102,6 +105,49 @@ namespace Tlaoami.Application.Services
             return true;
         }
 
+        public async Task<GrupoDto> AssignDocenteTitularAsync(Guid grupoId, Guid? docenteTitularId)
+        {
+            // Validar que el grupo existe
+            var grupo = await _context.Grupos
+                .Include(g => g.CicloEscolar)
+                .Include(g => g.Salon)
+                .Include(g => g.DocenteTitular)
+                .FirstOrDefaultAsync(g => g.Id == grupoId);
+
+            if (grupo == null)
+                throw new Tlaoami.Application.Exceptions.NotFoundException("Grupo no encontrado", code: "GRUPO_NO_ENCONTRADO");
+
+            // Si se está asignando un docente (no null), validar que existe
+            if (docenteTitularId.HasValue)
+            {
+                var docente = await _context.Users.FindAsync(docenteTitularId.Value);
+                if (docente == null)
+                    throw new Tlaoami.Application.Exceptions.NotFoundException("Usuario no encontrado", code: "DOCENTE_NO_ENCONTRADO");
+
+                // TODO: Validar rol cuando RBAC esté completo
+                // if (docente.Role != "Docente")
+                //     throw new Tlaoami.Application.Exceptions.BusinessException("El usuario no tiene rol de docente", code: "USUARIO_NO_ES_DOCENTE");
+            }
+
+            // Idempotencia: si ya está asignado el mismo docente, no hacer nada
+            if (grupo.DocenteTitularId == docenteTitularId)
+            {
+                return MapToDto(grupo);
+            }
+
+            // Asignar o quitar docente
+            grupo.DocenteTitularId = docenteTitularId;
+            await _context.SaveChangesAsync();
+
+            // Recargar navegación si se asignó un docente
+            if (docenteTitularId.HasValue)
+            {
+                await _context.Entry(grupo).Reference(g => g.DocenteTitular).LoadAsync();
+            }
+
+            return MapToDto(grupo);
+        }
+
         private static GrupoDto MapToDto(Grupo grupo)
         {
             return new GrupoDto
@@ -114,7 +160,9 @@ namespace Tlaoami.Application.Services
                 CicloEscolarId = grupo.CicloEscolarId,
                 CicloNombre = grupo.CicloEscolar?.Nombre,
                 SalonId = grupo.SalonId,
-                SalonCodigo = grupo.Salon?.Codigo
+                SalonCodigo = grupo.Salon?.Codigo,
+                DocenteTitularId = grupo.DocenteTitularId,
+                DocenteTitularNombre = grupo.DocenteTitular?.Username
             };
         }
     }

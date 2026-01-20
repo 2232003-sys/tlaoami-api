@@ -325,5 +325,12 @@ public class TlaoamiDbContext : DbContext
             .WithMany()
             .HasForeignKey(g => g.SalonId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Grupo → DocenteTitular relationship
+        modelBuilder.Entity<Grupo>()
+            .HasOne(g => g.DocenteTitular)
+            .WithMany()
+            .HasForeignKey(g => g.DocenteTitularId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

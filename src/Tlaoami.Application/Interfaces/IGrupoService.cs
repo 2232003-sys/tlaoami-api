@@ -13,5 +13,6 @@ namespace Tlaoami.Application.Interfaces
         Task<GrupoDto> CreateGrupoAsync(GrupoCreateDto dto);
         Task<GrupoDto> UpdateGrupoAsync(Guid id, GrupoCreateDto dto);
         Task<bool> DeleteGrupoAsync(Guid id);
+        Task<GrupoDto> AssignDocenteTitularAsync(Guid grupoId, Guid? docenteTitularId);
     }
 }

@@ -13,6 +13,8 @@ namespace Tlaoami.Application.Dtos
         public string? CicloNombre { get; set; }
         public Guid? SalonId { get; set; }
         public string? SalonCodigo { get; set; }
+        public Guid? DocenteTitularId { get; set; }
+        public string? DocenteTitularNombre { get; set; }
     }
 
     public class GrupoCreateDto
@@ -22,5 +24,10 @@ namespace Tlaoami.Application.Dtos
         public string? Turno { get; set; }
         public int? Capacidad { get; set; }
         public Guid CicloEscolarId { get; set; }
+    }
+
+    public class GrupoUpdateDocenteTitularDto
+    {
+        public Guid? DocenteTitularId { get; set; }
     }
 }

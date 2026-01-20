@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Exceptions;
 
 namespace Tlaoami.API.Controllers
 {
@@ -76,6 +78,29 @@ namespace Tlaoami.API.Controllers
             if (!result)
                 return NotFound();
             return NoContent();
+        }
+
+        [Authorize]
+        [HttpPut("{id}/docente-titular")]
+        public async Task<ActionResult<GrupoDto>> AssignDocenteTitular(Guid id, [FromBody] GrupoUpdateDocenteTitularDto dto)
+        {
+            try
+            {
+                var grupo = await _grupoService.AssignDocenteTitularAsync(id, dto.DocenteTitularId);
+                return Ok(grupo);
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
     }
 }
