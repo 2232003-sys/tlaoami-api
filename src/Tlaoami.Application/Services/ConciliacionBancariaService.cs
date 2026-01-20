@@ -19,7 +19,14 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
         _logger = logger;
     }
 
-    public async Task ConciliarMovimientoAsync(Guid movimientoBancarioId, Guid? alumnoId, Guid? facturaId, string? comentario)
+    public async Task ConciliarMovimientoAsync(
+        Guid movimientoBancarioId,
+        Guid? alumnoId,
+        Guid? facturaId,
+        string? comentario,
+        bool crearPago = false,
+        string metodo = "Transferencia",
+        DateTime? fechaPago = null)
     {
         var movimiento = await _context.MovimientosBancarios
             .FirstOrDefaultAsync(m => m.Id == movimientoBancarioId);
@@ -84,6 +91,54 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
         _context.MovimientosConciliacion.Add(conciliacion);
         await _context.SaveChangesAsync();
 
+        // Si se solicita, registrar pago contra la factura relacionada
+        if (crearPago && facturaId.HasValue)
+        {
+            var factura = await _context.Facturas
+                .Include(f => f.Pagos)
+                .FirstOrDefaultAsync(f => f.Id == facturaId.Value);
+
+            if (factura != null)
+            {
+                if (movimiento.Tipo != TipoMovimiento.Deposito)
+                {
+                    throw new InvalidOperationException("Solo se pueden registrar pagos desde movimientos de tipo Depósito");
+                }
+
+                var pago = new Pago
+                {
+                    Id = Guid.NewGuid(),
+                    FacturaId = factura.Id,
+                    Monto = movimiento.Monto,
+                    FechaPago = fechaPago?.ToUniversalTime() ?? movimiento.Fecha,
+                    Metodo = Enum.TryParse<MetodoPago>(metodo, true, out var mt) ? mt : MetodoPago.Transferencia,
+                    PaymentIntentId = movimiento.Id // correlacionar para revertir
+                };
+
+                _context.Pagos.Add(pago);
+                await _context.SaveChangesAsync();
+
+                var totalPagado = (await _context.Pagos
+                    .Where(p => p.FacturaId == factura.Id)
+                    .Select(p => p.Monto)
+                    .ToListAsync()).Sum();
+
+                var saldo = factura.Monto - totalPagado;
+                var hoy = DateTime.UtcNow.Date;
+
+                if (saldo <= 0)
+                    factura.Estado = EstadoFactura.Pagada;
+                else if (hoy > factura.FechaVencimiento.Date)
+                    factura.Estado = EstadoFactura.Vencida;
+                else if (totalPagado > 0)
+                    factura.Estado = EstadoFactura.ParcialmentePagada;
+                else
+                    factura.Estado = EstadoFactura.Pendiente;
+
+                await _context.SaveChangesAsync();
+            }
+        }
+
         _logger.LogInformation(
             "Movimiento {MovimientoId} conciliado correctamente con Alumno: {AlumnoId}, Factura: {FacturaId}",
             movimientoBancarioId, alumnoId, facturaId);
@@ -111,6 +166,40 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
 
         if (conciliacion != null)
         {
+            // Revertir pago(s) asociados por PaymentIntentId (correlación)
+            var pagos = await _context.Pagos
+                .Where(p => p.PaymentIntentId == movimientoBancarioId)
+                .ToListAsync();
+
+            if (pagos.Any())
+            {
+                var facturaIds = pagos.Select(p => p.FacturaId).Distinct().ToList();
+                _context.Pagos.RemoveRange(pagos);
+                await _context.SaveChangesAsync();
+
+                foreach (var fid in facturaIds)
+                {
+                    var factura = await _context.Facturas
+                        .Include(f => f.Pagos)
+                        .FirstOrDefaultAsync(f => f.Id == fid);
+                    if (factura != null)
+                    {
+                        var totalPagado = factura.Pagos?.Sum(p => p.Monto) ?? 0m;
+                        var saldo = factura.Monto - totalPagado;
+                        var hoy = DateTime.UtcNow.Date;
+
+                        if (saldo <= 0)
+                            factura.Estado = EstadoFactura.Pagada;
+                        else if (hoy > factura.FechaVencimiento.Date)
+                            factura.Estado = EstadoFactura.Vencida;
+                        else if (totalPagado > 0)
+                            factura.Estado = EstadoFactura.ParcialmentePagada;
+                        else
+                            factura.Estado = EstadoFactura.Pendiente;
+                    }
+                }
+            }
+
             _context.MovimientosConciliacion.Remove(conciliacion);
         }
 

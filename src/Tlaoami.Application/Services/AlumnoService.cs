@@ -109,7 +109,7 @@ namespace Tlaoami.Application.Services
         {
             var alumno = await _context.Alumnos.FindAsync(id);
             if (alumno == null)
-                throw new Exception("Alumno no encontrado");
+                throw new Tlaoami.Application.Exceptions.NotFoundException("Alumno no encontrado", code: "ALUMNO_NO_ENCONTRADO");
 
             if (!string.IsNullOrEmpty(dto.Nombre))
                 alumno.Nombre = dto.Nombre;

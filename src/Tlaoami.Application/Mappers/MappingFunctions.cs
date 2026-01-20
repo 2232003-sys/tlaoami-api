@@ -30,6 +30,7 @@ namespace Tlaoami.Application.Mappers
                 Id = factura.Id,
                 AlumnoId = factura.AlumnoId,
                 NumeroFactura = factura.NumeroFactura,
+                Concepto = factura.Concepto,
                 Monto = factura.Monto,
                 Saldo = factura.Monto - totalPagado,
                 FechaEmision = factura.FechaEmision,
@@ -44,6 +45,7 @@ namespace Tlaoami.Application.Mappers
             {
                 Id = pago.Id,
                 FacturaId = pago.FacturaId,
+                IdempotencyKey = pago.IdempotencyKey,
                 Monto = pago.Monto,
                 FechaPago = pago.FechaPago,
                 Metodo = pago.Metodo.ToString()
@@ -61,12 +63,16 @@ namespace Tlaoami.Application.Mappers
                     ? $"{factura.Alumno.Nombre} {factura.Alumno.Apellido}" 
                     : null,
                 NumeroFactura = factura.NumeroFactura,
+                Concepto = factura.Concepto,
                 Monto = factura.Monto,
                 Saldo = factura.Monto - totalPagado,
                 TotalPagado = totalPagado,
                 FechaEmision = factura.FechaEmision,
                 FechaVencimiento = factura.FechaVencimiento,
                 Estado = factura.Estado.ToString(),
+                IssuedAt = factura.IssuedAt,
+                CanceledAt = factura.CanceledAt,
+                CancelReason = factura.CancelReason,
                 Pagos = factura.Pagos?.Select(ToPagoDto).ToList() ?? new List<PagoDto>()
             };
         }

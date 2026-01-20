@@ -13,5 +13,6 @@ namespace Tlaoami.Application.Interfaces
         Task<CicloEscolarDto> CreateCicloAsync(CicloEscolarCreateDto dto);
         Task<CicloEscolarDto> UpdateCicloAsync(Guid id, CicloEscolarCreateDto dto);
         Task<bool> DeleteCicloAsync(Guid id);
+        Task<bool> SetCicloActivoAsync(Guid id);
     }
 }

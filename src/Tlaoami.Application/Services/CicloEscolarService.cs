@@ -59,7 +59,7 @@ namespace Tlaoami.Application.Services
         {
             var ciclo = await _context.CiclosEscolares.FindAsync(id);
             if (ciclo == null)
-                throw new Exception("Ciclo escolar no encontrado");
+                throw new Tlaoami.Application.Exceptions.NotFoundException("Ciclo escolar no encontrado", code: "CICLO_NO_ENCONTRADO");
 
             if (!string.IsNullOrEmpty(dto.Nombre))
                 ciclo.Nombre = dto.Nombre;
@@ -81,6 +81,28 @@ namespace Tlaoami.Application.Services
             _context.CiclosEscolares.Remove(ciclo);
             await _context.SaveChangesAsync();
 
+            return true;
+        }
+
+        public async Task<bool> SetCicloActivoAsync(Guid id)
+        {
+            await using var tx = await _context.Database.BeginTransactionAsync();
+
+            var ciclo = await _context.CiclosEscolares.FindAsync(id);
+            if (ciclo == null)
+                return false;
+
+            // Desactivar todos los ciclos
+            var todos = await _context.CiclosEscolares.ToListAsync();
+            foreach (var c in todos)
+            {
+                c.Activo = false;
+            }
+
+            // Activar el ciclo seleccionado
+            ciclo.Activo = true;
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
             return true;
         }
 

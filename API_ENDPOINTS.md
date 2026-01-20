@@ -10,292 +10,159 @@ Obtiene todas las facturas (sin detalle de alumno ni pagos).
   "id": "guid",
   "alumnoId": "guid",
   "numeroFactura": "string",
-  "monto": 0,
-  "saldo": 0,
-  "fechaEmision": "datetime",
-  "fechaVencimiento": "datetime",
-  "estado": "Pendiente|ParcialmentePagada|Pagada|Vencida"
-}
-```
+  # API Backend — Endpoints Disponibles (v1)
 
-### GET `/api/v1/facturas/detalle`
-Obtiene todas las facturas CON información completa del alumno y sus pagos.
-**Response:** `FacturaDetalleDto[]`
-```json
-{
-  "id": "guid",
-  "alumnoId": "guid",
-  "alumnoNombreCompleto": "string",
-  "numeroFactura": "string",
-  "monto": 0,
-  "saldo": 0,
-  "totalPagado": 0,
-  "fechaEmision": "datetime",
-  "fechaVencimiento": "datetime",
-  "estado": "Pendiente|ParcialmentePagada|Pagada|Vencida",
-  "pagos": [
-    {
-      "id": "guid",
-      "facturaId": "guid",
-      "monto": 0,
-      "fechaPago": "datetime",
-      "metodo": "Tarjeta|Transferencia|Efectivo"
-    }
-  ]
-}
-```
+  Este documento refleja exactamente lo implementado en los controllers bajo `src/Tlaoami.API/Controllers`.
 
-### GET `/api/v1/facturas/{id}`
-Obtiene una factura por ID (sin detalle).
-**Response:** `FacturaDto`
+  ## Alumnos (`/api/v1/Alumnos`)
 
-### GET `/api/v1/facturas/{id}/detalle`
-Obtiene una factura por ID CON detalle completo (alumno + pagos).
-**Response:** `FacturaDetalleDto`
+  - GET `/api/v1/Alumnos` — Lista de alumnos. Respuesta: `AlumnoDto[]`
+  - GET `/api/v1/Alumnos/{id}` — Alumno por id. Respuesta: `AlumnoDto`
+  - GET `/api/v1/Alumnos/matricula/{matricula}` — Alumno por matrícula. Respuesta: `AlumnoDto`
+  - GET `/api/v1/Alumnos/{id}/grupo-actual` — Alumno con su grupo activo. Respuesta: `AlumnoDto`
+  - GET `/api/v1/Alumnos/{id}/estado-cuenta` — Estado de cuenta. Respuesta: `EstadoCuentaDto`
+  - POST `/api/v1/Alumnos` — Crear alumno. Cuerpo: `AlumnoCreateDto`. Respuesta: `AlumnoDto` (201)
+  - PUT `/api/v1/Alumnos/{id}` — Actualizar alumno. Cuerpo: `AlumnoUpdateDto`. Respuesta: `AlumnoDto`
+  - DELETE `/api/v1/Alumnos/{id}` — Eliminar alumno. Respuesta: 204
 
-### GET `/api/v1/facturas/alumno/{alumnoId}`
-Obtiene todas las facturas de un alumno específico CON detalle.
-**Response:** `FacturaDetalleDto[]`
+  ---
 
-### POST `/api/v1/facturas`
-Crea una nueva factura.
-**Request:** `FacturaDto`
-**Response:** `FacturaDto` (201 Created)
+  ## Asignaciones (`/api/v1/Asignaciones`)
 
-### PUT `/api/v1/facturas/{id}`
-Actualiza una factura existente.
-**Request:** `FacturaDto`
-**Response:** 204 No Content
+  - POST `/api/v1/Asignaciones/alumno-grupo` — Asignar alumno a grupo. Cuerpo: `AsignarAlumnoGrupoDto`. Respuesta: `AlumnoGrupoDto` (201)
+  - GET `/api/v1/Asignaciones/alumno/{alumnoId}/grupo-actual` — Grupo actual del alumno. Respuesta: `GrupoDto`
+  - POST `/api/v1/Asignaciones/alumno/{alumnoId}/desasignar` — Desasignar alumno del grupo activo. Respuesta: 204
 
-### DELETE `/api/v1/facturas/{id}`
-Elimina una factura.
-**Response:** 204 No Content
+  ---
 
----
+  ## Ciclos (`/api/v1/Ciclos`)
 
-## Pagos (`/api/pagos`)
+  - GET `/api/v1/Ciclos` — Listar ciclos. Respuesta: `CicloEscolarDto[]`
+  - GET `/api/v1/Ciclos/activo` — Ciclo activo. Respuesta: `CicloEscolarDto`
+  - GET `/api/v1/Ciclos/{id}` — Ciclo por id. Respuesta: `CicloEscolarDto`
+  - POST `/api/v1/Ciclos` — Crear ciclo. Cuerpo: `CicloEscolarCreateDto`. Respuesta: `CicloEscolarDto` (201)
+  - PUT `/api/v1/Ciclos/{id}` — Actualizar ciclo. Cuerpo: `CicloEscolarCreateDto`. Respuesta: `CicloEscolarDto`
+  - DELETE `/api/v1/Ciclos/{id}` — Eliminar ciclo. Respuesta: 204
 
-### POST `/api/pagos`
-Registra un nuevo pago para una factura.
-**Request:** `PagoCreateDto`
-```json
-{
-  "facturaId": "guid",
-  "monto": 0,
-  "fechaPago": "datetime",
-  "metodo": "Tarjeta|Transferencia|Efectivo"
-}
-```
-**Response:** `PagoDto` (201 Created)
-**Nota:** Actualiza automáticamente el estado de la factura si se alcanza el monto total.
+  ---
 
-### GET `/api/pagos/{id}`
-Obtiene un pago por ID.
-**Response:** `PagoDto`
+  ## Grupos (`/api/v1/Grupos`)
 
-### GET `/api/pagos/factura/{facturaId}`
-Obtiene todos los pagos de una factura específica (ordenados por fecha desc).
-**Response:** `PagoDto[]`
+  - GET `/api/v1/Grupos` — Listar grupos. Respuesta: `GrupoDto[]`
+  - GET `/api/v1/Grupos/ciclo/{cicloId}` — Grupos por ciclo. Respuesta: `GrupoDto[]`
+  - GET `/api/v1/Grupos/{id}` — Grupo por id. Respuesta: `GrupoDto`
+  - POST `/api/v1/Grupos` — Crear grupo. Cuerpo: `GrupoCreateDto`. Respuesta: `GrupoDto` (201)
+  - PUT `/api/v1/Grupos/{id}` — Actualizar grupo. Cuerpo: `GrupoCreateDto`. Respuesta: `GrupoDto`
+  - DELETE `/api/v1/Grupos/{id}` — Eliminar grupo. Respuesta: 204
 
----
+  ---
 
-## Pagos Online (`/api/v1/pagos-online`)
+  ## Facturas (`/api/v1/Facturas`)
 
-### POST `/api/v1/pagos-online/intents`
-Crea una intención de pago (payment intent).
-**Request:** `CrearPaymentIntentDto`
-```json
-{
-  "facturaId": "guid",
-  "monto": 0,
-  "usuario": "string"
-}
-```
-**Response:** `PaymentIntentDto` (200 OK)
+  - GET `/api/v1/Facturas` — Listado con filtros: `alumnoId`, `estado`, `desde`, `hasta`. Respuesta: `FacturaDetalleDto[]`
+  - GET `/api/v1/Facturas/detalle` — Todas las facturas con detalle. Respuesta: `FacturaDetalleDto[]`
+  - GET `/api/v1/Facturas/{id}` — Factura por id (sin detalle). Respuesta: `FacturaDto`
+  - GET `/api/v1/Facturas/{id}/detalle` — Factura por id con detalle. Respuesta: `FacturaDetalleDto`
+  - GET `/api/v1/Facturas/alumno/{alumnoId}` — Facturas de un alumno (detalle). Respuesta: `FacturaDetalleDto[]`
+  - POST `/api/v1/Facturas/{id}/emitir` — Emitir factura. Idempotente: si ya está emitida o con pagos → 200 OK; si cancelada → 409.
+  - POST `/api/v1/Facturas/{id}/cancelar` — Cancelar factura. Cuerpo opcional: `{ motivo: string }`. Idempotente: si ya está cancelada → 200 OK; si pagada → 409.
+  - POST `/api/v1/Facturas` — Crear factura. Cuerpo: `CrearFacturaDto`. Respuesta: `FacturaDto` (201)
+  - PUT `/api/v1/Facturas/{id}` — Actualizar factura. Cuerpo: `FacturaDto`. Respuesta: 204
+  - DELETE `/api/v1/Facturas/{id}` — Eliminar factura. Respuesta: 204
 
-### GET `/api/v1/pagos-online/intents/{id}`
-Obtiene una intención de pago por ID.
-**Response:** `PaymentIntentDto`
+  ---
 
-### GET `/api/v1/pagos-online/facturas/{facturaId}`
-Obtiene todas las intenciones de pago de una factura.
-**Response:** `PaymentIntentDto[]`
+  ## Pagos (`/api/v1/Pagos`)
 
-### POST `/api/v1/pagos-online/{id}/confirmar`
-Confirma una intención de pago (crea el pago real).
-**Request:** `ConfirmarPaymentIntentDto`
-```json
-{
-  "usuario": "string",
-  "comentario": "string"
-}
-```
-**Response:** `PaymentIntentDto`
+  - POST `/api/v1/Pagos` — Registrar pago idempotente. Cuerpo: `PagoCreateDto` (requiere `idempotencyKey` 8-128 chars). Si ya existe el pago con mismo `FacturaId` y `IdempotencyKey` → 200 con el mismo recurso; si no, crea 201. Respuesta: `PagoDto`.
+  - GET `/api/v1/Pagos/{id}` — Obtener pago por id. Respuesta: `PagoDto`
+  - GET `/api/v1/Pagos/factura/{facturaId}` — Pagos por factura. Respuesta: `PagoDto[]`
 
-### POST `/api/v1/pagos-online/{id}/cancelar`
-Cancela una intención de pago.
-**Request:** `CancelarPaymentIntentDto`
-```json
-{
-  "usuario": "string",
-  "comentario": "string"
-}
-```
-**Response:** `PaymentIntentDto`
+  Notas: Registrar un pago actualiza automáticamente el estado de la factura cuando corresponde.
 
-### POST `/api/v1/pagos-online/{id}/webhook-simulado`
-Simula un webhook de proveedor de pagos (para testing).
-**Request:** `WebhookSimuladoDto`
-```json
-{
-  "estado": "succeeded|failed|cancelled",
-  "comentario": "string"
-}
-```
-**Response:** `PaymentIntentDto`
+  ---
 
----
+  ## Pagos Online (`/api/v1/pagos-online`)
 
-## Conciliación (`/api/conciliacion`)
+  - POST `/api/v1/pagos-online/intents` — Crear intención de pago. Cuerpo: `CrearPaymentIntentDto`. Respuesta: `PaymentIntentDto`
+  - GET `/api/v1/pagos-online/intents/{id}` — Obtener intención por id. Respuesta: `PaymentIntentDto`
+  - GET `/api/v1/pagos-online/facturas/{facturaId}` — Intenciones por factura. Respuesta: `PaymentIntentDto[]`
+  - POST `/api/v1/pagos-online/{id}/confirmar` — Confirmar intención (crea Pago). Cuerpo: `ConfirmarPaymentIntentDto`. Respuesta: `PaymentIntentDto`
+  - POST `/api/v1/pagos-online/{id}/cancelar` — Cancelar intención. Cuerpo: `CancelarPaymentIntentDto`. Respuesta: `PaymentIntentDto`
+  - POST `/api/v1/pagos-online/{id}/webhook-simulado` — Simular webhook de proveedor. Cuerpo: `WebhookSimuladoDto`. Respuesta: `PaymentIntentDto`
 
-### POST `/api/conciliacion/importar-csv`
-Importa movimientos bancarios desde CSV.
-**Request:** Multipart/form-data con archivo CSV
-**Response:** `ImportacionResultadoDto`
+  ---
 
+  ## Conciliación (`/api/v1/conciliacion`)
+
+  - GET `/api/v1/conciliacion/movimientos` — Listar movimientos bancarios. Query: `estado`, `tipo`, `desde`, `hasta`, `page`, `pageSize`. Respuesta: `MovimientoBancarioDto[]`
+  - POST `/api/v1/conciliacion/importar-estado-cuenta` — Importar CSV. Form-data campo: `archivoCsv`. Respuesta: `ImportacionResultadoDto`
+  - POST `/api/v1/conciliacion/conciliar` — Conciliar un movimiento. Cuerpo: `ConciliarRequest`. Respuesta: 200 con mensaje
+  - POST `/api/v1/conciliacion/revertir` — Revertir conciliación. Cuerpo: `RevertirRequest`. Respuesta: 200 con mensaje
+  - GET `/api/v1/conciliacion/{movimientoBancarioId}/sugerencias` — Sugerencias para un movimiento. Respuesta: `SugerenciaConciliacionDto[]`
+  - GET `/api/v1/conciliacion/conciliados` — Conciliaciones realizadas (query `desde`, `hasta`). Respuesta: `ConciliacionDetalleDto[]`
+
+  ---
+
+  ## Setup (DEV) (`/api/v1/Setup`)
+
+  - POST `/api/v1/Setup/test-data` — Crea datos mínimos de prueba. Respuesta: `{ facturaId, alumnoId }`
+  - POST `/api/v1/Setup/seed-alumnos-grupos` — Crea ciclo 2025-2026, grupos 2A/2B y alumnos ejemplo con asignaciones activas (idempotente). Respuesta: `{ message, created[] }`
+
+  ---
+
+  ## Enums y Estados (referencia)
+
+  - EstadoFactura: `Pendiente | ParcialmentePagada | Pagada | Vencida`
+  - MetodoPago: `Tarjeta | Transferencia | Efectivo`
+  - EstadoPaymentIntent: `Pendiente | Procesando | Completado | Fallido | Cancelado`
+
+  ---
+
+  ## Notas
+
+  - Todas las rutas (salvo Pagos Online y Conciliación) usan convención `api/v1/[Controller]` con mayúsculas del nombre del controller real (`Alumnos`, `Pagos`, etc.).
+  - `GET /api/v1/Facturas` devuelve detalle (incluye pagos y alumno) cuando aplica; use `/{id}` para DTO simple.
+  - La importación de conciliación requiere `archivoCsv` como campo de formulario.
+
+  ## Ejemplos rápidos
+
+  Crear factura
+
+  ```http
+  POST /api/v1/Facturas
+  Content-Type: application/json
+
+  {
+    "alumnoId": "12345678-1234-1234-1234-123456789012",
+    "numeroFactura": "F-2026-001",
+    "monto": 5000,
+    "fechaEmision": "2026-01-15",
+    "fechaVencimiento": "2026-02-15",
+    "estado": "Pendiente"
+  }
+  ```
+
+  Registrar pago
+
+  ```http
+  POST /api/v1/Pagos
+  Content-Type: application/json
+
+  {
+    "facturaId": "{factura-id}",
+    "monto": 5000,
+    "fechaPago": "2026-01-18",
+    "metodo": "Transferencia"
+  }
+  ```
+
+  Importar estado de cuenta (CSV)
+
+  ```http
+  POST /api/v1/conciliacion/importar-estado-cuenta
+  Content-Type: multipart/form-data
+
+  archivoCsv=@/ruta/estado_cuenta.csv
+  ```
 ### GET `/api/conciliacion/movimientos`
-Obtiene todos los movimientos bancarios.
-**Response:** `MovimientoBancarioDto[]`
-
-### GET `/api/conciliacion/movimientos/{id}`
-Obtiene un movimiento bancario por ID.
-**Response:** `MovimientoBancarioDto`
-
-### GET `/api/conciliacion/sugerencias`
-Obtiene sugerencias de conciliación.
-**Response:** `SugerenciaConciliacionDto[]`
-
-### POST `/api/conciliacion/conciliar`
-Concilia un movimiento con una factura.
-**Request:** `ConciliarDto`
-**Response:** `ConciliacionDetalleDto`
-
-### GET `/api/conciliacion`
-Obtiene todas las conciliaciones realizadas.
-**Response:** `ConciliacionDetalleDto[]`
-
----
-
-## Estados y Enums
-
-### EstadoFactura
-- `Pendiente`: Factura sin pagos
-- `ParcialmentePagada`: Tiene pagos pero no alcanza el monto total
-- `Pagada`: Pagada completamente
-- `Vencida`: Pasó su fecha de vencimiento sin pagar
-
-### MetodoPago
-- `Tarjeta`: Pago con tarjeta de crédito/débito
-- `Transferencia`: Transferencia bancaria
-- `Efectivo`: Pago en efectivo
-
-### EstadoPaymentIntent
-- `Pendiente`: Creado, esperando pago
-- `Procesando`: En proceso de pago
-- `Completado`: Pago exitoso
-- `Fallido`: Pago rechazado
-- `Cancelado`: Cancelado manualmente
-
----
-
-## Notas Importantes
-
-1. **Facturas:**
-   - Use `/detalle` endpoints para UIs que necesitan mostrar nombre del alumno y pagos
-   - Use endpoints simples para listados rápidos sin datos relacionados
-   - El estado se actualiza automáticamente al registrar pagos
-
-2. **Pagos:**
-   - Cada pago se asocia a UNA factura
-   - Se puede pagar parcialmente una factura
-   - El estado de la factura cambia automáticamente a `Pagada` cuando totalPagado >= monto
-
-3. **Pagos Online:**
-   - Flujo: Crear intent → Webhook simula procesamiento → Confirmar/Cancelar
-   - Un payment intent confirmado crea automáticamente un Pago
-   - Útil para simular integraciones con Stripe/MercadoPago/etc
-
-4. **Conciliación:**
-   - Importar movimientos bancarios (CSV)
-   - Sistema sugiere matches automáticos
-   - Confirmar conciliaciones manualmente
-
----
-
-## Ejemplos de Uso
-
-### Flujo: Crear factura y registrar pago
-
-1. **Crear factura**
-```http
-POST /api/v1/facturas
-{
-  "alumnoId": "12345678-1234-1234-1234-123456789012",
-  "numeroFactura": "F-2026-001",
-  "monto": 5000,
-  "fechaEmision": "2026-01-15",
-  "fechaVencimiento": "2026-02-15",
-  "estado": "Pendiente"
-}
-```
-
-2. **Obtener factura con detalle**
-```http
-GET /api/v1/facturas/{id}/detalle
-```
-
-3. **Registrar pago**
-```http
-POST /api/pagos
-{
-  "facturaId": "{factura-id}",
-  "monto": 5000,
-  "fechaPago": "2026-01-18",
-  "metodo": "Transferencia"
-}
-```
-
-4. **Ver pagos de la factura**
-```http
-GET /api/pagos/factura/{factura-id}
-```
-
-### Flujo: Pago online
-
-1. **Crear intención de pago**
-```http
-POST /api/v1/pagos-online/intents
-{
-  "facturaId": "{factura-id}",
-  "monto": 5000,
-  "usuario": "admin@tlaoami.com"
-}
-```
-
-2. **Simular webhook de proveedor**
-```http
-POST /api/v1/pagos-online/{intent-id}/webhook-simulado
-{
-  "estado": "succeeded",
-  "comentario": "Pago procesado exitosamente"
-}
-```
-
-3. **Confirmar el pago**
-```http
-POST /api/v1/pagos-online/{intent-id}/confirmar
-{
-  "usuario": "admin@tlaoami.com",
-  "comentario": "Confirmado por administrador"
-}
-```

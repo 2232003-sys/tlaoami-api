@@ -18,10 +18,50 @@ namespace Tlaoami.API.Controllers
             _facturaService = facturaService;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<FacturaDto>>> GetFacturas()
+        [HttpPost("{id}/emitir")]
+        public async Task<ActionResult> EmitirFactura(Guid id)
         {
-            var facturas = await _facturaService.GetAllFacturasAsync();
+            try
+            {
+                await _facturaService.EmitirFacturaAsync(id);
+                return Ok(new { message = "Factura emitida (idempotente)" });
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/cancelar")]
+        public async Task<ActionResult> CancelarFactura(Guid id, [FromBody] CancelarFacturaRequest? request)
+        {
+            try
+            {
+                await _facturaService.CancelarFacturaAsync(id, request?.Motivo);
+                return Ok(new { message = "Factura cancelada (idempotente)" });
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<FacturaDetalleDto>>> GetFacturas(
+            [FromQuery] Guid? alumnoId = null,
+            [FromQuery] string? estado = null,
+            [FromQuery] DateTime? desde = null,
+            [FromQuery] DateTime? hasta = null)
+        {
+            var facturas = await _facturaService.GetFacturasConFiltrosAsync(alumnoId, estado, desde, hasta);
             return Ok(facturas);
         }
 
@@ -62,11 +102,11 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<FacturaDto>> CreateFactura([FromBody] FacturaDto facturaDto)
+        public async Task<ActionResult<FacturaDto>> CreateFactura([FromBody] CrearFacturaDto crearFacturaDto)
         {
             try
             {
-                var factura = await _facturaService.CreateFacturaAsync(facturaDto);
+                var factura = await _facturaService.CreateFacturaAsync(crearFacturaDto);
                 return CreatedAtAction(nameof(GetFactura), new { id = factura.Id }, factura);
             }
             catch (Exception ex)
@@ -103,4 +143,9 @@ namespace Tlaoami.API.Controllers
             }
         }
     }
+}
+
+public class CancelarFacturaRequest
+{
+    public string? Motivo { get; set; }
 }

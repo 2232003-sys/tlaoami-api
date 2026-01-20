@@ -16,6 +16,7 @@ public class TlaoamiDbContext : DbContext
     public DbSet<PaymentIntent> PaymentIntents { get; set; }
     public DbSet<MovimientoBancario> MovimientosBancarios { get; set; }
     public DbSet<MovimientoConciliacion> MovimientosConciliacion { get; set; }
+    public DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -80,14 +81,22 @@ public class TlaoamiDbContext : DbContext
             .HasConversion<string>();
 
         modelBuilder.Entity<Pago>()
+            .Property(p => p.IdempotencyKey)
+            .HasMaxLength(128);
+
+        modelBuilder.Entity<Pago>()
             .HasOne(p => p.Factura)
             .WithMany(f => f.Pagos)
             .HasForeignKey(p => p.FacturaId);
 
         modelBuilder.Entity<Pago>()
+            .HasIndex(p => new { p.FacturaId, p.IdempotencyKey })
+            .IsUnique();
+
+        modelBuilder.Entity<Pago>()
             .HasIndex(p => p.PaymentIntentId)
             .IsUnique()
-            .HasFilter("[PaymentIntentId] IS NOT NULL");
+            .HasFilter("\"PaymentIntentId\" IS NOT NULL");
 
         // PaymentIntent configuration
         modelBuilder.Entity<PaymentIntent>()
@@ -134,5 +143,10 @@ public class TlaoamiDbContext : DbContext
             .WithMany()
             .HasForeignKey(mc => mc.FacturaId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // User configuration
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Username)
+            .IsUnique();
     }
 }

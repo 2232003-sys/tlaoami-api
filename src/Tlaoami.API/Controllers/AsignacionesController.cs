@@ -49,5 +49,12 @@ namespace Tlaoami.API.Controllers
                 return NotFound(new { message = "El alumno no tiene grupo asignado" });
             return NoContent();
         }
+
+        [HttpGet("alumno/{alumnoId}/historial")]
+        public async Task<ActionResult<IEnumerable<AlumnoGrupoDto>>> GetHistorialAsignaciones(Guid alumnoId)
+        {
+            var historial = await _asignacionService.GetHistorialAsignacionesAlumnoAsync(alumnoId);
+            return Ok(historial);
+        }
     }
 }

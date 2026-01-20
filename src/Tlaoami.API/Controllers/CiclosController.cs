@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Domain;
 
 namespace Tlaoami.API.Controllers
 {
@@ -75,6 +77,16 @@ namespace Tlaoami.API.Controllers
         public async Task<ActionResult> DeleteCiclo(Guid id)
         {
             var result = await _cicloService.DeleteCicloAsync(id);
+            if (!result)
+                return NotFound();
+            return NoContent();
+        }
+
+        [HttpPut("{id}/activar")]
+        [Authorize(Roles = Roles.Admin)]
+        public async Task<ActionResult> ActivarCiclo(Guid id)
+        {
+            var result = await _cicloService.SetCicloActivoAsync(id);
             if (!result)
                 return NotFound();
             return NoContent();

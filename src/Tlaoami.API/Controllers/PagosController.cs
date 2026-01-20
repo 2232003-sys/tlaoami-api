@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Domain;
 
 namespace Tlaoami.API.Controllers
 {
     [ApiController]
-    [Route("api/pagos")]
+    [Route("api/v1/[controller]")]
     public class PagosController : ControllerBase
     {
         private readonly IPagoService _pagoService;
@@ -16,12 +18,15 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = Roles.AdminAndAdministrativo)]
         public async Task<ActionResult<PagoDto>> RegistrarPago([FromBody] PagoCreateDto pagoCreateDto)
         {
             try
             {
-                var pagoDto = await _pagoService.RegistrarPagoAsync(pagoCreateDto);
-                return CreatedAtAction(nameof(GetPago), new { id = pagoDto.Id }, pagoDto);
+                var (pagoDto, created) = await _pagoService.RegistrarPagoAsync(pagoCreateDto);
+                if (created)
+                    return CreatedAtAction(nameof(GetPago), new { id = pagoDto.Id }, pagoDto);
+                return Ok(pagoDto);
             }
             catch (Exception ex)
             {

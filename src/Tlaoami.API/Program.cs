@@ -1,9 +1,17 @@
+using Tlaoami.API.Middleware;
+using Tlaoami.Application.Exceptions;
 using Tlaoami.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Npgsql.EntityFrameworkCore.PostgreSQL;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Application.Interfaces.PagosOnline;
 using Tlaoami.Application.Services;
 using Tlaoami.Application.Services.PagosOnline;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,8 +25,11 @@ builder.Services.AddScoped<IAsignacionGrupoService, AsignacionGrupoService>();
 builder.Services.AddScoped<IConciliacionBancariaService, ConciliacionBancariaService>();
 builder.Services.AddScoped<ISugerenciasConciliacionService, SugerenciasConciliacionService>();
 builder.Services.AddScoped<IConsultaConciliacionesService, ConsultaConciliacionesService>();
+builder.Services.AddScoped<IImportacionEstadoCuentaService, ImportacionEstadoCuentaService>();
 builder.Services.AddScoped<IPagosOnlineService, PagosOnlineService>();
 builder.Services.AddScoped<IPagoOnlineProvider, FakePagoOnlineProvider>();
+builder.Services.AddScoped<IReinscripcionService, ReinscripcionService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -31,14 +42,44 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configure JWT Authentication
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "TlaoamiSecretKeyForDevelopmentOnly12345678";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "Tlaoami";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "TlaoamiUsers";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Configure DbContext to use the connection string from appsettings.json
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<TlaoamiDbContext>(options =>
-    options.UseSqlite(connectionString));
+// Configure DbContext to use the selected provider (Sqlite default, Postgres optional)
+var databaseProvider = builder.Configuration.GetValue<string>("DatabaseProvider") ?? "Sqlite";
+if (string.Equals(databaseProvider, "Postgres", StringComparison.OrdinalIgnoreCase))
+{
+    var pgConnection = builder.Configuration.GetConnectionString("PostgresConnection");
+    builder.Services.AddDbContext<TlaoamiDbContext>(options => options.UseNpgsql(pgConnection));
+}
+else
+{
+    var sqliteConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+    builder.Services.AddDbContext<TlaoamiDbContext>(options => options.UseSqlite(sqliteConnection));
+}
 
 var app = builder.Build();
 
@@ -58,10 +99,49 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// Handle BusinessException uniformly with 409 and JSON {code,message}
+app.UseMiddleware<BusinessExceptionMiddleware>();
+
+// Always return JSON ProblemDetails for unhandled exceptions
+app.UseExceptionHandler(handler =>
+{
+    handler.Run(async context =>
+    {
+        var feature = context.Features.Get<IExceptionHandlerFeature>();
+        var status = context.Response.StatusCode != 200 ? context.Response.StatusCode : StatusCodes.Status500InternalServerError;
+        context.Response.StatusCode = status;
+        context.Response.ContentType = "application/problem+json";
+        var problem = new ProblemDetails
+        {
+            Title = status == 500 ? "An unexpected error occurred." : "Request failed.",
+            Status = status,
+            Detail = feature?.Error.Message
+        };
+        await context.Response.WriteAsJsonAsync(problem);
+    });
+});
+
+// Return JSON ProblemDetails for non-success status codes (like 404)
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    if (response.StatusCode >= 400)
+    {
+        response.ContentType = "application/problem+json";
+        var problem = new ProblemDetails
+        {
+            Title = $"HTTP {response.StatusCode}",
+            Status = response.StatusCode
+        };
+        await response.WriteAsJsonAsync(problem);
+    }
+});
+
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFront");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();

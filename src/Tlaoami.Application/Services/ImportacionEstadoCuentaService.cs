@@ -26,13 +26,35 @@ namespace Tlaoami.Application.Services
         {
             var resultado = new ImportacionResultadoDto();
             var cultura = new CultureInfo("es-MX");
-            var config = new CsvConfiguration(cultura) { HasHeaderRecord = true };
+            var config = new CsvConfiguration(cultura) 
+            { 
+                HasHeaderRecord = true,
+                IgnoreBlankLines = true
+            };
 
             List<MovimientoCsvRow> movimientosParseados;
             using (var reader = new StreamReader(archivoCsv.OpenReadStream()))
             using (var csv = new CsvReader(reader, config))
             {
-                var registrosCrudos = csv.GetRecords<MovimientoCsvRawRow>().ToList();
+                // Lee encabezados y normaliza (remueve acentos)
+                csv.Read();
+                csv.ReadHeader();
+                var headersRaw = csv.HeaderRecord;
+                var headersNormalized = headersRaw?.Select(h => RemoveAccents(h ?? "").Trim()).ToArray() ?? Array.Empty<string>();
+                
+                var registrosCrudos = new List<MovimientoCsvRawRow>();
+                while (csv.Read())
+                {
+                    registrosCrudos.Add(new MovimientoCsvRawRow
+                    {
+                        Fecha = GetFieldNormalized(csv, headersNormalized, "Fecha"),
+                        Descripcion = GetFieldNormalized(csv, headersNormalized, "Descripcion"),
+                        Deposito = GetFieldNormalized(csv, headersNormalized, "Depositos"),
+                        Retiro = GetFieldNormalized(csv, headersNormalized, "Retiros"),
+                        Saldo = GetFieldNormalized(csv, headersNormalized, "Saldo")
+                    });
+                }
+
                 movimientosParseados = registrosCrudos.Select(row => new MovimientoCsvRow
                 {
                     Fecha = DateTime.Parse(row.Fecha, cultura),
@@ -134,7 +156,28 @@ namespace Tlaoami.Application.Services
                 .ToListAsync();
         }
 
-        private decimal? ParseCurrency(string? value)
+        private static string RemoveAccents(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+            var nfdForm = text.Normalize(NormalizationForm.FormD);
+            var result = new StringBuilder();
+            foreach (var c in nfdForm)
+            {
+                if (char.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                    result.Append(c);
+            }
+            return result.ToString();
+        }
+
+        private static string GetFieldNormalized(CsvReader csv, string[] normalizedHeaders, string fieldName)
+        {
+            var normalizedField = RemoveAccents(fieldName).Trim();
+            var idx = Array.FindIndex(normalizedHeaders, h => h.Equals(normalizedField, StringComparison.OrdinalIgnoreCase));
+            return idx >= 0 ? (csv[idx] ?? string.Empty) : string.Empty;
+        }
+
+        private static decimal? ParseCurrency(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 return null;

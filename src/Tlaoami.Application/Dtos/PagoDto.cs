@@ -7,6 +7,7 @@ namespace Tlaoami.Application.Dtos
     {
         public Guid Id { get; set; }
         public Guid FacturaId { get; set; }
+        public string? IdempotencyKey { get; set; }
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; }
         public string? Metodo { get; set; }

@@ -1,0 +1,322 @@
+{
+  "info": {
+    "_postman_id": "4a4c5fe0-2e3e-4b68-9a89-1b85df4a6a01",
+    "name": "Tlaoami API (v1)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colección de endpoints reales de la API Tlaoami. Ajusta {{baseUrl}} en tu environment."
+  },
+  "item": [
+    {
+      "name": "Alumnos",
+      "item": [
+        {
+          "name": "Listar alumnos",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Alumnos" }
+        },
+        {
+          "name": "Alumno por id",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Alumnos/:id" },
+          "response": [],
+          "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+        },
+        {
+          "name": "Alumno por matrícula",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Alumnos/matricula/:matricula" },
+          "variable": [{ "key": "matricula", "value": "A2025001" }]
+        },
+        {
+          "name": "Grupo actual de alumno",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Alumnos/:id/grupo-actual" },
+          "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+        },
+        {
+          "name": "Estado de cuenta de alumno",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Alumnos/:id/estado-cuenta" },
+          "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+        },
+        {
+          "name": "Crear alumno",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"matricula\": \"A2025009\",\n  \"nombre\": \"Eva\",\n  \"apellido\": \"Ramírez\",\n  \"email\": \"eva@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/Alumnos"
+          }
+        },
+        {
+          "name": "Actualizar alumno",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Eva\",\n  \"apellido\": \"Ramírez\",\n  \"email\": \"eva.r@example.com\",\n  \"activo\": true\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/Alumnos/:id"
+          },
+          "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+        },
+        {
+          "name": "Eliminar alumno",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/Alumnos/:id" },
+          "variable": [{ "key": "id", "value": "00000000-0000-0000-0000-000000000000" }]
+        }
+      ]
+    },
+    {
+      "name": "Asignaciones",
+      "item": [
+        {
+          "name": "Asignar alumno a grupo",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alumnoId\": \"00000000-0000-0000-0000-000000000000\",\n  \"grupoId\": \"00000000-0000-0000-0000-000000000000\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/Asignaciones/alumno-grupo"
+          }
+        },
+        {
+          "name": "Grupo actual por alumno",
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Asignaciones/alumno/:alumnoId/grupo-actual" },
+          "variable": [{ "key": "alumnoId", "value": "00000000-0000-0000-0000-000000000000" }]
+        },
+        {
+          "name": "Desasignar alumno",
+          "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/Asignaciones/alumno/:alumnoId/desasignar" },
+          "variable": [{ "key": "alumnoId", "value": "00000000-0000-0000-0000-000000000000" }]
+        }
+      ]
+    },
+    {
+      "name": "Ciclos",
+      "item": [
+        { "name": "Listar ciclos", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Ciclos" } },
+        { "name": "Ciclo activo", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Ciclos/activo" } },
+        { "name": "Ciclo por id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Ciclos/:id" }, "variable": [{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        {
+          "name": "Crear ciclo",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"nombre\": \"2026-2027\",\n  \"fechaInicio\": \"2026-08-01\",\n  \"fechaFin\": \"2027-06-30\",\n  \"activo\": true\n}"},
+            "url": "{{baseUrl}}/api/v1/Ciclos"
+          }
+        },
+        {
+          "name": "Actualizar ciclo",
+          "request": {
+            "method": "PUT",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"nombre\": \"2026-2027\",\n  \"fechaInicio\": \"2026-08-01\",\n  \"fechaFin\": \"2027-06-30\",\n  \"activo\": true\n}"},
+            "url": "{{baseUrl}}/api/v1/Ciclos/:id"
+          },
+          "variable": [{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        },
+        { "name": "Eliminar ciclo", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/Ciclos/:id" }, "variable": [{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] }
+      ]
+    },
+    {
+      "name": "Grupos",
+      "item": [
+        { "name": "Listar grupos", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Grupos" } },
+        { "name": "Grupos por ciclo", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Grupos/ciclo/:cicloId" }, "variable":[{"key":"cicloId","value":"00000000-0000-0000-0000-000000000000"}] },
+        { "name": "Grupo por id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Grupos/:id" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        {
+          "name": "Crear grupo",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"nombre\": \"2C\",\n  \"grado\": 2,\n  \"turno\": \"Matutino\",\n  \"cicloEscolarId\": \"00000000-0000-0000-0000-000000000000\"\n}"},
+            "url": "{{baseUrl}}/api/v1/Grupos"
+          }
+        },
+        {
+          "name": "Actualizar grupo",
+          "request": {
+            "method": "PUT",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"nombre\": \"2C\",\n  \"grado\": 2,\n  \"turno\": \"Vespertino\",\n  \"cicloEscolarId\": \"00000000-0000-0000-0000-000000000000\"\n}"},
+            "url": "{{baseUrl}}/api/v1/Grupos/:id"
+          },
+          "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        },
+        { "name": "Eliminar grupo", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/Grupos/:id" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] }
+      ]
+    },
+    {
+      "name": "Facturas",
+      "item": [
+        { "name": "Listar (con filtros)", "request": { "method": "GET", "url": {"raw": "{{baseUrl}}/api/v1/Facturas?alumnoId={{alumnoId}}&estado={{estado}}&desde={{desde}}&hasta={{hasta}}", "host":["{{baseUrl}}"], "path":["api","v1","Facturas"], "query":[{"key":"alumnoId","value":""},{"key":"estado","value":""},{"key":"desde","value":""},{"key":"hasta","value":""}] } } },
+        { "name": "Todas con detalle", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Facturas/detalle" } },
+        { "name": "Factura por id (simple)", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Facturas/:id" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        { "name": "Factura por id (detalle)", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Facturas/:id/detalle" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        { "name": "Por alumno (detalle)", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Facturas/alumno/:alumnoId" }, "variable":[{"key":"alumnoId","value":"00000000-0000-0000-0000-000000000000"}] },
+        {
+          "name": "Crear factura",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"alumnoId\": \"00000000-0000-0000-0000-000000000000\",\n  \"numeroFactura\": \"F-2026-001\",\n  \"monto\": 5000,\n  \"fechaEmision\": \"2026-01-15\",\n  \"fechaVencimiento\": \"2026-02-15\",\n  \"estado\": \"Pendiente\"\n}"},
+            "url": "{{baseUrl}}/api/v1/Facturas"
+          }
+        },
+        {
+          "name": "Actualizar factura",
+          "request": {
+            "method": "PUT",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"id\": \"00000000-0000-0000-0000-000000000000\",\n  \"alumnoId\": \"00000000-0000-0000-0000-000000000000\",\n  \"numeroFactura\": \"F-2026-001\",\n  \"monto\": 5000,\n  \"saldo\": 5000,\n  \"fechaEmision\": \"2026-01-15\",\n  \"fechaVencimiento\": \"2026-02-15\",\n  \"estado\": \"Pendiente\"\n}"},
+            "url": "{{baseUrl}}/api/v1/Facturas/:id"
+          },
+          "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        },
+        { "name": "Eliminar factura", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/v1/Facturas/:id" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] }
+        ,
+        { "name": "Emitir factura", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/Facturas/:id/emitir" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        {
+          "name": "Cancelar factura",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"motivo\": \"Cancelación por ajuste\"\n}"},
+            "url": "{{baseUrl}}/api/v1/Facturas/:id/cancelar"
+          },
+          "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        }
+      ]
+    },
+    {
+      "name": "Pagos",
+      "item": [
+        {
+          "name": "Registrar pago",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"facturaId\": \"00000000-0000-0000-0000-000000000000\",\n  \"idempotencyKey\": \"pay-001-abcdef123456\",\n  \"monto\": 5000,\n  \"fechaPago\": \"2026-01-18\",\n  \"metodo\": \"Transferencia\"\n}"},
+            "url": "{{baseUrl}}/api/v1/Pagos"
+          }
+        },
+        { "name": "Pago por id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Pagos/:id" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        { "name": "Pagos por factura", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/Pagos/factura/:facturaId" }, "variable":[{"key":"facturaId","value":"00000000-0000-0000-0000-000000000000"}] }
+      ]
+    },
+    {
+      "name": "Pagos Online",
+      "item": [
+        {
+          "name": "Crear intent",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"facturaId\": \"00000000-0000-0000-0000-000000000000\",\n  \"monto\": 5000,\n  \"usuario\": \"admin@tlaoami.com\"\n}"},
+            "url": "{{baseUrl}}/api/v1/pagos-online/intents"
+          }
+        },
+        { "name": "Intent por id", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/pagos-online/intents/:id" }, "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}] },
+        { "name": "Intents por factura", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/pagos-online/facturas/:facturaId" }, "variable":[{"key":"facturaId","value":"00000000-0000-0000-0000-000000000000"}] },
+        {
+          "name": "Confirmar intent",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"usuario\": \"admin@tlaoami.com\",\n  \"comentario\": \"Confirmado por administrador\"\n}"},
+            "url": "{{baseUrl}}/api/v1/pagos-online/:id/confirmar"
+          },
+          "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        },
+        {
+          "name": "Cancelar intent",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"usuario\": \"admin@tlaoami.com\",\n  \"comentario\": \"Cancelado por pruebas\"\n}"},
+            "url": "{{baseUrl}}/api/v1/pagos-online/:id/cancelar"
+          },
+          "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        },
+        {
+          "name": "Webhook simulado",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"estado\": \"succeeded\",\n  \"comentario\": \"Pago procesado exitosamente\"\n}"},
+            "url": "{{baseUrl}}/api/v1/pagos-online/:id/webhook-simulado"
+          },
+          "variable":[{"key":"id","value":"00000000-0000-0000-0000-000000000000"}]
+        }
+      ]
+    },
+    {
+      "name": "Conciliación",
+      "item": [
+        {
+          "name": "Listar movimientos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/conciliacion/movimientos?estado=&tipo=&desde=&hasta=&page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","conciliacion","movimientos"],
+              "query": [
+                {"key":"estado","value":""},
+                {"key":"tipo","value":""},
+                {"key":"desde","value":""},
+                {"key":"hasta","value":""},
+                {"key":"page","value":"1"},
+                {"key":"pageSize","value":"50"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Importar estado de cuenta (CSV)",
+          "request": {
+            "method": "POST",
+            "header": [ {"key":"Content-Type","value":"multipart/form-data"} ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key":"archivoCsv","type":"file","src":["/ruta/a/test_estado_cuenta.csv"]}
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/conciliacion/importar-estado-cuenta"
+          }
+        },
+        {
+          "name": "Conciliar movimiento",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"movimientoBancarioId\": \"00000000-0000-0000-0000-000000000000\",\n  \"alumnoId\": null,\n  \"facturaId\": \"00000000-0000-0000-0000-000000000000\",\n  \"comentario\": \"Conciliación manual\",\n  \"crearPago\": true,\n  \"metodo\": \"Transferencia\",\n  \"fechaPago\": \"2026-01-18\"\n}"},
+            "url": "{{baseUrl}}/api/v1/conciliacion/conciliar"
+          }
+        },
+        {
+          "name": "Revertir conciliación",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "body": {"mode":"raw","raw":"{\n  \"movimientoBancarioId\": \"00000000-0000-0000-0000-000000000000\"\n}"},
+            "url": "{{baseUrl}}/api/v1/conciliacion/revertir"
+          }
+        },
+        { "name": "Sugerencias por movimiento", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/conciliacion/:movimientoId/sugerencias" }, "variable":[{"key":"movimientoId","value":"00000000-0000-0000-0000-000000000000"}] },
+        { "name": "Conciliados", "request": { "method": "GET", "url": "{{baseUrl}}/api/v1/conciliacion/conciliados?desde=&hasta=" } }
+      ]
+    },
+    {
+      "name": "Setup (DEV)",
+      "item": [
+        { "name": "Crear test data", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/Setup/test-data" } },
+        { "name": "Seed alumnos+grupos (idempotente)", "request": { "method": "POST", "url": "{{baseUrl}}/api/v1/Setup/seed-alumnos-grupos" } }
+      ]
+    }
+  ]
+}

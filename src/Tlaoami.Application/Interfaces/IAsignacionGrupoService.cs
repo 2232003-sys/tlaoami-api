@@ -22,5 +22,10 @@ namespace Tlaoami.Application.Interfaces
         /// Desactiva la asignación actual de un alumno a su grupo.
         /// </summary>
         Task<bool> DesasignarAlumnoDeGrupoAsync(Guid alumnoId);
+
+        /// <summary>
+        /// Obtiene el historial de asignaciones de un alumno (lectura).
+        /// </summary>
+        Task<IEnumerable<AlumnoGrupoDto>> GetHistorialAsignacionesAlumnoAsync(Guid alumnoId);
     }
 }

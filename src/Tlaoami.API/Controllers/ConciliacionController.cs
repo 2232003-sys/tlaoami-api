@@ -3,6 +3,8 @@ using Tlaoami.Application.Contracts;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Domain.Entities;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Http;
 
 namespace Tlaoami.API.Controllers
 {
@@ -43,6 +45,30 @@ namespace Tlaoami.API.Controllers
             return Ok(movimientos);
         }
 
+        [HttpPost("importar-estado-cuenta")]
+        public async Task<ActionResult<ImportacionResultadoDto>> ImportarEstadoCuenta([FromForm] IFormFile? archivoCsv)
+        {
+            try
+            {
+                if (archivoCsv == null || archivoCsv.Length == 0)
+                {
+                    return BadRequest(new ProblemDetails
+                    {
+                        Title = "Archivo inválido",
+                        Detail = "Debe proporcionar un archivo CSV no vacío en el campo 'archivoCsv'",
+                        Status = StatusCodes.Status400BadRequest
+                    });
+                }
+
+                var resultado = await _importacionService.ImportarAsync(archivoCsv);
+                return Ok(resultado);
+            }
+            catch (ApplicationException ex)
+            {
+                return BadRequest(new ProblemDetails { Title = "Error de importación", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
+            }
+        }
+
         [HttpPost("conciliar")]
         public async Task<ActionResult> Conciliar([FromBody] ConciliarRequest request)
         {
@@ -52,17 +78,20 @@ namespace Tlaoami.API.Controllers
                     request.MovimientoBancarioId,
                     request.AlumnoId,
                     request.FacturaId,
-                    request.Comentario);
+                    request.Comentario,
+                    request.CrearPago,
+                    request.Metodo ?? "Transferencia",
+                    request.FechaPago);
                 
                 return Ok(new { message = "Movimiento conciliado correctamente" });
             }
             catch (ApplicationException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(new ProblemDetails { Title = "No encontrado", Detail = ex.Message, Status = StatusCodes.Status404NotFound });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
             }
         }
 
@@ -76,7 +105,7 @@ namespace Tlaoami.API.Controllers
             }
             catch (ApplicationException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(new ProblemDetails { Title = "No encontrado", Detail = ex.Message, Status = StatusCodes.Status404NotFound });
             }
         }
 
@@ -90,11 +119,11 @@ namespace Tlaoami.API.Controllers
             }
             catch (ApplicationException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(new ProblemDetails { Title = "No encontrado", Detail = ex.Message, Status = StatusCodes.Status404NotFound });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
             }
         }
 
@@ -108,11 +137,11 @@ namespace Tlaoami.API.Controllers
             }
             catch (ApplicationException ex)
             {
-                return NotFound(new { error = ex.Message });
+                return NotFound(new ProblemDetails { Title = "No encontrado", Detail = ex.Message, Status = StatusCodes.Status404NotFound });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { error = ex.Message });
+                return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
             }
         }
     }
@@ -121,7 +150,10 @@ namespace Tlaoami.API.Controllers
         Guid MovimientoBancarioId,
         Guid? AlumnoId,
         Guid? FacturaId,
-        string? Comentario);
+        string? Comentario,
+        bool CrearPago = false,
+        string? Metodo = "Transferencia",
+        DateTime? FechaPago = null);
 
     public record RevertirRequest(Guid MovimientoBancarioId);
 }

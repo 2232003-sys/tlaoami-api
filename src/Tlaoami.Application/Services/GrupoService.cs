@@ -52,6 +52,7 @@ namespace Tlaoami.Application.Services
                 Nombre = dto.Nombre,
                 Grado = dto.Grado,
                 Turno = dto.Turno,
+                Capacidad = dto.Capacidad,
                 CicloEscolarId = dto.CicloEscolarId
             };
 
@@ -68,11 +69,12 @@ namespace Tlaoami.Application.Services
         {
             var grupo = await _context.Grupos.FindAsync(id);
             if (grupo == null)
-                throw new Exception("Grupo no encontrado");
+                throw new Tlaoami.Application.Exceptions.NotFoundException("Grupo no encontrado", code: "GRUPO_NO_ENCONTRADO");
 
             grupo.Nombre = dto.Nombre;
             grupo.Grado = dto.Grado;
             grupo.Turno = dto.Turno;
+            grupo.Capacidad = dto.Capacidad;
             grupo.CicloEscolarId = dto.CicloEscolarId;
 
             await _context.SaveChangesAsync();
@@ -105,6 +107,7 @@ namespace Tlaoami.Application.Services
                 Nombre = grupo.Nombre,
                 Grado = grupo.Grado,
                 Turno = grupo.Turno,
+                Capacidad = grupo.Capacidad,
                 CicloEscolarId = grupo.CicloEscolarId,
                 CicloNombre = grupo.CicloEscolar?.Nombre
             };

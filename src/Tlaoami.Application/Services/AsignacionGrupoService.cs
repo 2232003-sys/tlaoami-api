@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Domain.Entities;
+using Tlaoami.Application.Exceptions;
 using Tlaoami.Infrastructure;
 
 namespace Tlaoami.Application.Services
@@ -19,14 +20,17 @@ namespace Tlaoami.Application.Services
 
         public async Task<AlumnoGrupoDto> AsignarAlumnoAGrupoAsync(AsignarAlumnoGrupoDto dto)
         {
+            // Usar transacción para evitar condición de carrera y validar cerca del insert
+            await using var tx = await _context.Database.BeginTransactionAsync();
+
             // Verificar que alumno y grupo existen
             var alumno = await _context.Alumnos.FindAsync(dto.AlumnoId);
             if (alumno == null)
-                throw new Exception("Alumno no encontrado");
+                throw new NotFoundException("Alumno no encontrado", code: "ALUMNO_NO_ENCONTRADO");
 
             var grupo = await _context.Grupos.FindAsync(dto.GrupoId);
             if (grupo == null)
-                throw new Exception("Grupo no encontrado");
+                throw new NotFoundException("Grupo no encontrado", code: "GRUPO_NO_ENCONTRADO");
 
             // Cerrar asignación activa anterior si existe
             var asignacionActiva = await _context.AsignacionesGrupo
@@ -39,7 +43,14 @@ namespace Tlaoami.Application.Services
             {
                 asignacionActiva.FechaFin = dto.FechaInicio.AddDays(-1);
                 asignacionActiva.Activo = false;
+                await _context.SaveChangesAsync();
             }
+
+            // Validar capacidad del grupo (no sobrecargar) justo antes del insert
+            var asignadosActivos = await _context.AsignacionesGrupo
+                .CountAsync(ag => ag.GrupoId == dto.GrupoId && ag.Activo && ag.FechaFin == null);
+            if (grupo.Capacidad.HasValue && asignadosActivos >= grupo.Capacidad.Value)
+                throw new BusinessException("Capacidad del grupo alcanzada", code: "GRUPO_SIN_CUPO");
 
             // Crear nueva asignación
             var nuevaAsignacion = new AlumnoGrupo
@@ -54,6 +65,7 @@ namespace Tlaoami.Application.Services
 
             _context.AsignacionesGrupo.Add(nuevaAsignacion);
             await _context.SaveChangesAsync();
+            await tx.CommitAsync();
 
             return MapToDto(nuevaAsignacion);
         }
@@ -99,6 +111,16 @@ namespace Tlaoami.Application.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<IEnumerable<AlumnoGrupoDto>> GetHistorialAsignacionesAlumnoAsync(Guid alumnoId)
+        {
+            var historial = await _context.AsignacionesGrupo
+                .Where(ag => ag.AlumnoId == alumnoId)
+                .OrderBy(ag => ag.FechaInicio)
+                .ToListAsync();
+
+            return historial.Select(MapToDto);
         }
 
         private static AlumnoGrupoDto MapToDto(AlumnoGrupo ag)

@@ -114,6 +114,7 @@ public class PagosOnlineService : IPagosOnlineService
 
         if (paymentIntent.Estado == EstadoPagoIntent.Pagado)
         {
+            await EnsurePagoForIntentAsync(paymentIntent);
             return ToDto(paymentIntent);
         }
 
@@ -133,55 +134,27 @@ public class PagosOnlineService : IPagosOnlineService
             throw new InvalidOperationException("El PaymentIntent ha expirado.");
         }
 
-        // Verificar si ya existe un pago asociado (idempotencia)
-        var pagoExistente = await _context.Pagos
-            .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntentId);
-
-        if (pagoExistente != null)
-        {
-            return ToDto(paymentIntent);
-        }
-
-        // Crear Pago real
-        var factura = await _context.Facturas
-            .Include(f => f.Pagos)
-            .FirstOrDefaultAsync(f => f.Id == paymentIntent.FacturaId);
-
-        if (factura == null)
-        {
-            throw new ApplicationException("Factura no encontrada.");
-        }
-
-        var nuevoPago = new Pago
-        {
-            Id = Guid.NewGuid(),
-            FacturaId = paymentIntent.FacturaId,
-            Monto = paymentIntent.Monto,
-            FechaPago = DateTime.UtcNow,
-            Metodo = MapMetodoPago(paymentIntent.Metodo),
-            PaymentIntentId = paymentIntentId
-        };
-
-        _context.Pagos.Add(nuevoPago);
-
         // Actualizar estado del PaymentIntent
         paymentIntent.Estado = EstadoPagoIntent.Pagado;
         paymentIntent.ActualizadoEnUtc = DateTime.UtcNow;
         // TODO: auditoria cuando exista tabla (usuario/comentario)
 
-        // Actualizar estado de la Factura
-        var totalPagado = factura.Pagos.Sum(p => p.Monto) + nuevoPago.Monto;
-
-        if (totalPagado >= factura.Monto)
+        await EnsurePagoForIntentAsync(paymentIntent, saveChanges: false);
+        try
         {
-            factura.Estado = EstadoFactura.Pagada;
+            await _context.SaveChangesAsync();
         }
-        else if (totalPagado > 0)
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
         {
-            factura.Estado = EstadoFactura.ParcialmentePagada;
+            // Concurrencia: otro proceso grabó el pago; devuelve el existente.
+            var concurrent = await _context.Pagos.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntent.Id || p.IdempotencyKey == $"ONLINE:{paymentIntent.Id}");
+            if (concurrent != null)
+            {
+                return ToDto(paymentIntent);
+            }
+            throw;
         }
-
-        await _context.SaveChangesAsync();
 
         return ToDto(paymentIntent);
     }
@@ -249,6 +222,7 @@ public class PagosOnlineService : IPagosOnlineService
         {
             if (paymentIntent.Estado == EstadoPagoIntent.Pagado)
             {
+                await EnsurePagoForIntentAsync(paymentIntent);
                 return ToDto(paymentIntent);
             }
 
@@ -260,6 +234,8 @@ public class PagosOnlineService : IPagosOnlineService
             paymentIntent.Estado = EstadoPagoIntent.Pagado;
             paymentIntent.ActualizadoEnUtc = DateTime.UtcNow;
             // TODO: auditoria cuando exista tabla
+
+            await EnsurePagoForIntentAsync(paymentIntent, saveChanges: false);
         }
         else if (estadoLower == "cancelado")
         {
@@ -282,9 +258,104 @@ public class PagosOnlineService : IPagosOnlineService
             throw new InvalidOperationException("Estado no valido. Use 'pagado' o 'cancelado'.");
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        {
+            // Concurrencia: otro proceso grabó el pago; devolvemos dto del intent actual.
+            var concurrent = await _context.Pagos.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntent.Id || p.IdempotencyKey == $"ONLINE:{paymentIntent.Id}");
+            if (concurrent != null)
+            {
+                return ToDto(paymentIntent);
+            }
+            throw;
+        }
 
         return ToDto(paymentIntent);
+    }
+
+    private async Task<Pago> EnsurePagoForIntentAsync(PaymentIntent paymentIntent, bool saveChanges = true)
+    {
+        var existing = await _context.Pagos.FirstOrDefaultAsync(p =>
+            p.PaymentIntentId == paymentIntent.Id || p.IdempotencyKey == $"ONLINE:{paymentIntent.Id}");
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var factura = await _context.Facturas
+            .Include(f => f.Pagos)
+            .FirstOrDefaultAsync(f => f.Id == paymentIntent.FacturaId);
+
+        if (factura == null)
+        {
+            throw new ApplicationException("Factura no encontrada.");
+        }
+
+        var pago = new Pago
+        {
+            Id = Guid.NewGuid(),
+            FacturaId = paymentIntent.FacturaId,
+            IdempotencyKey = $"ONLINE:{paymentIntent.Id}",
+            Monto = paymentIntent.Monto,
+            FechaPago = DateTime.UtcNow,
+            Metodo = MapMetodoPago(paymentIntent.Metodo),
+            PaymentIntentId = paymentIntent.Id
+        };
+
+        _context.Pagos.Add(pago);
+        factura.Pagos.Add(pago);
+        factura.RecalculateFrom(null, factura.Pagos);
+
+        if (saveChanges)
+        {
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+            {
+                // Concurrencia: índice único; recupera existente.
+                _context.Entry(pago).State = EntityState.Detached;
+                var concurrent = await _context.Pagos.AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.PaymentIntentId == paymentIntent.Id || p.IdempotencyKey == $"ONLINE:{paymentIntent.Id}");
+                if (concurrent != null)
+                    return concurrent;
+                throw;
+            }
+        }
+
+        return pago;
+    }
+
+    private static bool IsUniqueViolation(DbUpdateException ex)
+    {
+        var inner = ex.InnerException;
+        if (inner == null) return false;
+
+        var typeName = inner.GetType().Name;
+        
+        // SQLite via reflection
+        if (typeName == "SqliteException")
+        {
+            var errorCodeProp = inner.GetType().GetProperty("SqliteErrorCode");
+            var errorCode = errorCodeProp?.GetValue(inner);
+            if (errorCode != null && (int)errorCode == 19 && inner.Message.Contains("UNIQUE"))
+                return true;
+        }
+
+        // PostgreSQL via reflection
+        if (typeName == "PostgresException")
+        {
+            var sqlStateProp = inner.GetType().GetProperty("SqlState");
+            var sqlState = sqlStateProp?.GetValue(inner) as string;
+            if (sqlState == "23505") return true;
+        }
+        
+        return false;
     }
 
     private static PaymentIntentDto ToDto(PaymentIntent paymentIntent)

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Domain;
 
 namespace Tlaoami.API.Controllers
 {
@@ -55,6 +57,7 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpGet("{id}/estado-cuenta")]
+        [Authorize(Roles = Roles.AllRoles)]
         public async Task<ActionResult<EstadoCuentaDto>> GetEstadoCuenta(Guid id)
         {
             var estadoCuenta = await _alumnoService.GetEstadoCuentaAsync(id);
