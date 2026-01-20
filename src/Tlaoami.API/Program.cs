@@ -30,6 +30,9 @@ builder.Services.AddScoped<IPagosOnlineService, PagosOnlineService>();
 builder.Services.AddScoped<IPagoOnlineProvider, FakePagoOnlineProvider>();
 builder.Services.AddScoped<IReinscripcionService, ReinscripcionService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IConceptosCobroService, ConceptosCobroService>();
+builder.Services.AddScoped<IReglasCobroService, ReglasCobroService>();
+builder.Services.AddScoped<IAvisoPrivacidadService, AvisoPrivacidadService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -143,6 +146,9 @@ app.UseCors("AllowFront");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Middleware: Verificar cumplimiento de privacidad (aviso aceptado)
+app.UsePrivacidadCompliance();
 
 app.MapControllers();
 

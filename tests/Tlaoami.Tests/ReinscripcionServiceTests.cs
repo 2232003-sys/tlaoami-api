@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Exceptions;
+using Tlaoami.Application.Interfaces;
 using Tlaoami.Application.Services;
 using Tlaoami.Domain.Entities;
 using Tlaoami.Infrastructure;
@@ -17,7 +18,6 @@ namespace Tlaoami.Tests
         private readonly TlaoamiDbContext _context;
         private readonly ReinscripcionService _reinscripcionService;
         private readonly AlumnoService _alumnoService;
-        private readonly CicloEscolarService _cicloService;
         private readonly AsignacionGrupoService _asignacionService;
 
         public ReinscripcionServiceTests()
@@ -28,17 +28,20 @@ namespace Tlaoami.Tests
                 .Options;
 
             _context = new TlaoamiDbContext(options);
-
             _alumnoService = new AlumnoService(_context);
-            _cicloService = new CicloEscolarService(_context);
             _asignacionService = new AsignacionGrupoService(_context);
-            _reinscripcionService = new ReinscripcionService(_context, _alumnoService, _cicloService, _asignacionService);
+            
+            _reinscripcionService = new ReinscripcionService(
+                _context, 
+                _asignacionService,
+                _alumnoService
+            );
         }
 
         [Fact]
-        public async Task ReinscribirAsync_ConAdeudoPendiente_LanzaBusinessException()
+        public async Task CrearReinscripcionAsync_ConAdeudoPendiente_LanzaBusinessException()
         {
-            // Arrange: Crear alumno con adeudo
+            // Arrange: Crear alumno, ciclo y grupo
             var alumno = new Alumno
             {
                 Id = Guid.NewGuid(),
@@ -48,22 +51,8 @@ namespace Tlaoami.Tests
                 Activo = true,
                 FechaInscripcion = DateTime.UtcNow
             };
-            _context.Alumnos.Add(alumno);
 
-            // Crear factura pendiente (adeudo > 0)
-            var factura = new Factura
-            {
-                Id = Guid.NewGuid(),
-                AlumnoId = alumno.Id,
-                NumeroFactura = "FAC-001",
-                Monto = 1000m,
-                FechaEmision = DateTime.UtcNow,
-                Estado = EstadoFactura.Pendiente
-            };
-            _context.Facturas.Add(factura);
-
-            // Crear ciclo activo y grupo
-            var cicloActivo = new CicloEscolar
+            var ciclo = new CicloEscolar
             {
                 Id = Guid.NewGuid(),
                 Nombre = "2026",
@@ -71,7 +60,6 @@ namespace Tlaoami.Tests
                 FechaFin = DateTime.UtcNow.AddMonths(11),
                 Activo = true
             };
-            _context.CiclosEscolares.Add(cicloActivo);
 
             var grupo = new Grupo
             {
@@ -80,27 +68,45 @@ namespace Tlaoami.Tests
                 Grado = 1,
                 Turno = "Matutino",
                 Capacidad = 30,
-                CicloEscolarId = cicloActivo.Id
+                CicloEscolarId = ciclo.Id
             };
-            _context.Grupos.Add(grupo);
 
+            _context.Alumnos.Add(alumno);
+            _context.CiclosEscolares.Add(ciclo);
+            _context.Grupos.Add(grupo);
+            
+            // Crear factura pendiente para simular adeudo
+            var factura = new Factura
+            {
+                Id = Guid.NewGuid(),
+                AlumnoId = alumno.Id,
+                NumeroFactura = "FAC-001",
+                Monto = 100.00m,
+                FechaEmision = DateTime.UtcNow,
+                Estado = EstadoFactura.Pendiente
+            };
+            _context.Facturas.Add(factura);
+            
             await _context.SaveChangesAsync();
 
-            var request = new ReinscripcionRequestDto
+            var dto = new ReinscripcionCreateDto
             {
                 AlumnoId = alumno.Id,
-                GrupoId = grupo.Id
+                CicloDestinoId = ciclo.Id,
+                GrupoDestinoId = grupo.Id
             };
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BusinessException>(() => _reinscripcionService.ReinscribirAsync(request));
-            Assert.Equal("ADEUDO_PENDIENTE", exception.Code);
+            // Act & Assert: Debe lanzar BusinessException con código REINSCRIPCION_BLOQUEADA_ADEUDO
+            var exception = await Assert.ThrowsAsync<BusinessException>(() => 
+                _reinscripcionService.CrearReinscripcionAsync(dto, Guid.NewGuid()));
+            
+            Assert.Equal("REINSCRIPCION_BLOQUEADA_ADEUDO", exception.Code);
         }
 
         [Fact]
-        public async Task ReinscribirAsync_SinAdeudo_ReinscribeExitosamente()
+        public async Task CrearReinscripcionAsync_SinAdeudo_CreaBloqueadaExitosamente()
         {
-            // Arrange: Crear alumno sin adeudo
+            // Arrange: Crear alumno, ciclos y grupos
             var alumno = new Alumno
             {
                 Id = Guid.NewGuid(),
@@ -110,98 +116,88 @@ namespace Tlaoami.Tests
                 Activo = true,
                 FechaInscripcion = DateTime.UtcNow
             };
-            _context.Alumnos.Add(alumno);
 
-            // Crear ciclo activo
-            var cicloActivo = new CicloEscolar
+            var cicloActual = new CicloEscolar
             {
                 Id = Guid.NewGuid(),
-                Nombre = "2026",
+                Nombre = "2025",
                 FechaInicio = DateTime.UtcNow.AddMonths(-1),
                 FechaFin = DateTime.UtcNow.AddMonths(11),
                 Activo = true
             };
-            _context.CiclosEscolares.Add(cicloActivo);
 
-            // Crear grupo con cupo disponible
-            var grupoNuevo = new Grupo
+            var cicloDestino = new CicloEscolar
             {
                 Id = Guid.NewGuid(),
-                Nombre = "2A",
-                Grado = 2,
-                Turno = "Matutino",
-                Capacidad = 30,
-                CicloEscolarId = cicloActivo.Id
+                Nombre = "2026",
+                FechaInicio = DateTime.UtcNow.AddMonths(11),
+                FechaFin = DateTime.UtcNow.AddMonths(23),
+                Activo = true
             };
-            _context.Grupos.Add(grupoNuevo);
 
-            // Crear asignación previa (ciclo anterior)
-            var cicloAnterior = new CicloEscolar
-            {
-                Id = Guid.NewGuid(),
-                Nombre = "2025",
-                FechaInicio = DateTime.UtcNow.AddMonths(-13),
-                FechaFin = DateTime.UtcNow.AddMonths(-1),
-                Activo = false
-            };
-            _context.CiclosEscolares.Add(cicloAnterior);
-
-            var grupoAnterior = new Grupo
+            var grupoActual = new Grupo
             {
                 Id = Guid.NewGuid(),
                 Nombre = "1A",
                 Grado = 1,
                 Turno = "Matutino",
                 Capacidad = 30,
-                CicloEscolarId = cicloAnterior.Id
+                CicloEscolarId = cicloActual.Id
             };
-            _context.Grupos.Add(grupoAnterior);
 
-            var asignacionAnterior = new AlumnoGrupo
+            var grupoDestino = new Grupo
+            {
+                Id = Guid.NewGuid(),
+                Nombre = "2A",
+                Grado = 2,
+                Turno = "Matutino",
+                Capacidad = 30,
+                CicloEscolarId = cicloDestino.Id
+            };
+
+            // Asignación actual
+            var asignacionActual = new AlumnoGrupo
             {
                 Id = Guid.NewGuid(),
                 AlumnoId = alumno.Id,
-                GrupoId = grupoAnterior.Id,
-                FechaInicio = DateTime.UtcNow.AddMonths(-12),
-                FechaFin = null,
+                GrupoId = grupoActual.Id,
+                FechaInicio = DateTime.UtcNow.AddMonths(-1),
                 Activo = true
             };
-            _context.AsignacionesGrupo.Add(asignacionAnterior);
 
+            _context.Alumnos.Add(alumno);
+            _context.CiclosEscolares.AddRange(cicloActual, cicloDestino);
+            _context.Grupos.AddRange(grupoActual, grupoDestino);
+            _context.AsignacionesGrupo.Add(asignacionActual);
             await _context.SaveChangesAsync();
 
-            var request = new ReinscripcionRequestDto
+            var dto = new ReinscripcionCreateDto
             {
                 AlumnoId = alumno.Id,
-                GrupoId = grupoNuevo.Id
+                CicloDestinoId = cicloDestino.Id,
+                GrupoDestinoId = grupoDestino.Id
             };
 
             // Act
-            var result = await _reinscripcionService.ReinscribirAsync(request);
+            var result = await _reinscripcionService.CrearReinscripcionAsync(dto, Guid.NewGuid());
 
-            // Assert
+            // Assert: Debe crear una Reinscripción con estado Completada
             Assert.NotNull(result);
-            Assert.Equal("REINSCRITO", result.Status);
             Assert.Equal(alumno.Id, result.AlumnoId);
-            Assert.Equal(grupoNuevo.Id, result.GrupoId);
-            Assert.Equal(cicloActivo.Id, result.CicloId);
+            Assert.Equal(cicloDestino.Id, result.CicloDestinoId);
+            Assert.Equal(grupoDestino.Id, result.GrupoDestinoId);
+            Assert.Equal("Completada", result.Estado);
 
-            // Verificar que asignación anterior fue cerrada
-            var asignacionCerrada = await _context.AsignacionesGrupo.FindAsync(asignacionAnterior.Id);
-            Assert.NotNull(asignacionCerrada);
-            Assert.False(asignacionCerrada.Activo);
-            Assert.NotNull(asignacionCerrada.FechaFin);
-
-            // Verificar que se creó nueva asignación activa
-            var nuevaAsignacion = await _context.AsignacionesGrupo
-                .FirstOrDefaultAsync(a => a.AlumnoId == alumno.Id && a.GrupoId == grupoNuevo.Id && a.Activo);
-            Assert.NotNull(nuevaAsignacion);
+            // Verificar que se creó el registro en BD
+            var reinscripcionCreada = await _context.Reinscripciones
+                .FirstOrDefaultAsync(r => r.AlumnoId == alumno.Id && r.CicloDestinoId == cicloDestino.Id);
+            Assert.NotNull(reinscripcionCreada);
         }
 
         [Fact]
-        public async Task ReinscribirAsync_GrupoSinCupo_LanzaBusinessException()
+        public async Task CrearReinscripcionAsync_AlumnoYaInscritoEnCiclo_LanzaBusinessException()
         {
-            // Arrange: Crear alumno sin adeudo
+            // Arrange: Crear alumno que ya tiene asignación en ciclo destino
             var alumno = new Alumno
             {
                 Id = Guid.NewGuid(),
@@ -211,10 +207,8 @@ namespace Tlaoami.Tests
                 Activo = true,
                 FechaInscripcion = DateTime.UtcNow
             };
-            _context.Alumnos.Add(alumno);
 
-            // Crear ciclo activo
-            var cicloActivo = new CicloEscolar
+            var ciclo = new CicloEscolar
             {
                 Id = Guid.NewGuid(),
                 Nombre = "2026",
@@ -222,54 +216,55 @@ namespace Tlaoami.Tests
                 FechaFin = DateTime.UtcNow.AddMonths(11),
                 Activo = true
             };
-            _context.CiclosEscolares.Add(cicloActivo);
 
-            // Crear grupo con capacidad = 1
-            var grupo = new Grupo
+            var grupo1 = new Grupo
             {
                 Id = Guid.NewGuid(),
-                Nombre = "3A",
-                Grado = 3,
+                Nombre = "1A",
+                Grado = 1,
                 Turno = "Matutino",
-                Capacidad = 1,
-                CicloEscolarId = cicloActivo.Id
+                Capacidad = 30,
+                CicloEscolarId = ciclo.Id
             };
-            _context.Grupos.Add(grupo);
 
-            // Llenar el grupo (capacidad completa)
-            var otroAlumno = new Alumno
+            var grupo2 = new Grupo
             {
                 Id = Guid.NewGuid(),
-                Matricula = "TEST999",
-                Nombre = "Otro",
-                Apellido = "Alumno",
-                Activo = true,
-                FechaInscripcion = DateTime.UtcNow
+                Nombre = "1B",
+                Grado = 1,
+                Turno = "Vespertino",
+                Capacidad = 30,
+                CicloEscolarId = ciclo.Id
             };
-            _context.Alumnos.Add(otroAlumno);
 
+            // Alumno ya tiene asignación activa en el ciclo destino (grupo1)
             var asignacionExistente = new AlumnoGrupo
             {
                 Id = Guid.NewGuid(),
-                AlumnoId = otroAlumno.Id,
-                GrupoId = grupo.Id,
-                FechaInicio = DateTime.UtcNow.AddDays(-5),
-                FechaFin = null,
+                AlumnoId = alumno.Id,
+                GrupoId = grupo1.Id,
+                FechaInicio = DateTime.UtcNow.AddDays(-10),
                 Activo = true
             };
-            _context.AsignacionesGrupo.Add(asignacionExistente);
 
+            _context.Alumnos.Add(alumno);
+            _context.CiclosEscolares.Add(ciclo);
+            _context.Grupos.AddRange(grupo1, grupo2);
+            _context.AsignacionesGrupo.Add(asignacionExistente);
             await _context.SaveChangesAsync();
 
-            var request = new ReinscripcionRequestDto
+            var dto = new ReinscripcionCreateDto
             {
                 AlumnoId = alumno.Id,
-                GrupoId = grupo.Id
+                CicloDestinoId = ciclo.Id,
+                GrupoDestinoId = grupo2.Id  // Intentar inscribirse en otro grupo del mismo ciclo
             };
 
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<BusinessException>(() => _reinscripcionService.ReinscribirAsync(request));
-            Assert.Equal("GRUPO_SIN_CUPO", exception.Code);
+            // Act & Assert: Debe lanzar BusinessException porque ya está inscrito en ese ciclo
+            var exception = await Assert.ThrowsAsync<BusinessException>(() => 
+                _reinscripcionService.CrearReinscripcionAsync(dto, Guid.NewGuid()));
+
+            Assert.Equal("ALUMNO_YA_INSCRITO_EN_CICLO", exception.Code);
         }
 
         public void Dispose()

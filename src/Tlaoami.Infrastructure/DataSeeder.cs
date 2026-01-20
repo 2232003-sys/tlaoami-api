@@ -123,6 +123,42 @@ namespace Tlaoami.Infrastructure
             context.Facturas.AddRange(factura1, factura2, factura3);
             context.Pagos.Add(pago1);
 
+            // Seed Aviso de Privacidad (Development)
+            if (!context.AvisosPrivacidad.Any())
+            {
+                var avisoPrivacidad = new AvisoPrivacidad
+                {
+                    Id = Guid.NewGuid(),
+                    Version = "2026-01-19",
+                    Contenido = @"AVISO DE PRIVACIDAD
+
+En Tlaoami, protegemos su información personal. Recolectamos datos como nombre, email, domicilio y datos bancarios para:
+1. Gestionar la inscripción y reinscripción de alumnos
+2. Procesar pagos y facturas
+3. Comunicaciones académicas y administrativas
+4. Cumplimiento normativo
+
+Sus datos se procesan en servidores seguros bajo protocolos de encriptación. No compartimos su información con terceros sin consentimiento, excepto por requisitos legales.
+
+Tiene derecho a:
+- Acceso: Solicitar copia de sus datos
+- Rectificación: Corregir datos inexactos
+- Eliminación: Solicitar borrado de datos (sujeto a retención legal)
+- Limitación: Restringir procesamiento
+
+Contacto: privacidad@tlaoami.mx
+
+Al aceptar este aviso, usted autoriza el procesamiento de sus datos personales bajo las condiciones descritas.
+
+Fecha de vigencia: 19 de enero de 2026",
+                    Vigente = true,
+                    PublicadoEnUtc = DateTime.UtcNow,
+                    CreatedAtUtc = DateTime.UtcNow
+                };
+
+                context.AvisosPrivacidad.Add(avisoPrivacidad);
+            }
+
             await context.SaveChangesAsync();
         }
     }

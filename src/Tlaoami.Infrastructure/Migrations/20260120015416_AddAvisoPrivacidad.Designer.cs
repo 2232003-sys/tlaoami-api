@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Tlaoami.Infrastructure.Migrations
 {
     [DbContext(typeof(TlaoamiDbContext))]
-    partial class TlaoamiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260120015416_AddAvisoPrivacidad")]
+    partial class AddAvisoPrivacidad
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -511,65 +514,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.ToTable("ReglasCobro");
                 });
 
-            modelBuilder.Entity("Tlaoami.Domain.Entities.Reinscripcion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AlumnoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CicloDestinoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CicloOrigenId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("CompletedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreatedByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<Guid>("GrupoDestinoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("GrupoOrigenId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("MotivoBloqueo")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<decimal?>("SaldoAlMomento")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CicloDestinoId");
-
-                    b.HasIndex("CicloOrigenId");
-
-                    b.HasIndex("GrupoDestinoId");
-
-                    b.HasIndex("GrupoOrigenId");
-
-                    b.HasIndex("AlumnoId", "CicloDestinoId")
-                        .IsUnique();
-
-                    b.ToTable("Reinscripciones");
-                });
-
             modelBuilder.Entity("Tlaoami.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -724,47 +668,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.Navigation("CicloEscolar");
 
                     b.Navigation("ConceptoCobro");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.Reinscripcion", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
-                        .WithMany()
-                        .HasForeignKey("AlumnoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Tlaoami.Domain.Entities.CicloEscolar", "CicloDestino")
-                        .WithMany()
-                        .HasForeignKey("CicloDestinoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Tlaoami.Domain.Entities.CicloEscolar", "CicloOrigen")
-                        .WithMany()
-                        .HasForeignKey("CicloOrigenId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("Tlaoami.Domain.Entities.Grupo", "GrupoDestino")
-                        .WithMany()
-                        .HasForeignKey("GrupoDestinoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Tlaoami.Domain.Entities.Grupo", "GrupoOrigen")
-                        .WithMany()
-                        .HasForeignKey("GrupoOrigenId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Alumno");
-
-                    b.Navigation("CicloDestino");
-
-                    b.Navigation("CicloOrigen");
-
-                    b.Navigation("GrupoDestino");
-
-                    b.Navigation("GrupoOrigen");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Alumno", b =>

@@ -17,6 +17,11 @@ public class TlaoamiDbContext : DbContext
     public DbSet<MovimientoBancario> MovimientosBancarios { get; set; }
     public DbSet<MovimientoConciliacion> MovimientosConciliacion { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<ConceptoCobro> ConceptosCobro { get; set; }
+    public DbSet<ReglaCobroPorCiclo> ReglasCobro { get; set; }
+    public DbSet<AvisoPrivacidad> AvisosPrivacidad { get; set; }
+    public DbSet<AceptacionAvisoPrivacidad> AceptacionesAvisoPrivacidad { get; set; }
+    public DbSet<Reinscripcion> Reinscripciones { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -148,5 +153,152 @@ public class TlaoamiDbContext : DbContext
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
             .IsUnique();
+
+        // ConceptoCobro configuration
+        modelBuilder.Entity<ConceptoCobro>()
+            .HasIndex(c => c.Clave)
+            .IsUnique();
+
+        modelBuilder.Entity<ConceptoCobro>()
+            .Property(c => c.Clave)
+            .HasMaxLength(30)
+            .IsRequired();
+
+        modelBuilder.Entity<ConceptoCobro>()
+            .Property(c => c.Nombre)
+            .HasMaxLength(120)
+            .IsRequired();
+
+        modelBuilder.Entity<ConceptoCobro>()
+            .Property(c => c.Periodicidad)
+            .HasConversion<string>(); // Enum stored as string
+
+        // ReglaCobroPorCiclo configuration
+        modelBuilder.Entity<ReglaCobroPorCiclo>()
+            .HasOne(r => r.CicloEscolar)
+            .WithMany()
+            .HasForeignKey(r => r.CicloId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReglaCobroPorCiclo>()
+            .HasOne(r => r.ConceptoCobro)
+            .WithMany()
+            .HasForeignKey(r => r.ConceptoCobroId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Unique logical index: (CicloId, Grado, Turno, ConceptoCobroId, TipoGeneracion)
+        modelBuilder.Entity<ReglaCobroPorCiclo>()
+            .HasIndex(r => new { r.CicloId, r.Grado, r.Turno, r.ConceptoCobroId, r.TipoGeneracion })
+            .IsUnique()
+            .HasDatabaseName("IX_ReglasCobro_Unique_Logico");
+
+        modelBuilder.Entity<ReglaCobroPorCiclo>()
+            .Property(r => r.TipoGeneracion)
+            .HasConversion<string>(); // Enum stored as string
+
+        modelBuilder.Entity<ReglaCobroPorCiclo>()
+            .Property(r => r.Turno)
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<ReglaCobroPorCiclo>()
+            .Property(r => r.MontoBase)
+            .HasPrecision(18, 2);
+
+        // === AvisoPrivacidad Configuration ===
+        modelBuilder.Entity<AvisoPrivacidad>()
+            .HasKey(a => a.Id);
+
+        modelBuilder.Entity<AvisoPrivacidad>()
+            .Property(a => a.Version)
+            .IsRequired()
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<AvisoPrivacidad>()
+            .Property(a => a.Contenido)
+            .IsRequired();
+
+        modelBuilder.Entity<AvisoPrivacidad>()
+            .HasIndex(a => a.Vigente)
+            .IsUnique()
+            .HasFilter($"Vigente = true"); // Índice único solo en registros vigentes
+
+        modelBuilder.Entity<AvisoPrivacidad>()
+            .HasMany(a => a.Aceptaciones)
+            .WithOne(aa => aa.AvisoPrivacidad)
+            .HasForeignKey(aa => aa.AvisoPrivacidadId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // === AceptacionAvisoPrivacidad Configuration ===
+        modelBuilder.Entity<AceptacionAvisoPrivacidad>()
+            .HasKey(aa => aa.Id);
+
+        modelBuilder.Entity<AceptacionAvisoPrivacidad>()
+            .HasIndex(aa => new { aa.UsuarioId, aa.AvisoPrivacidadId })
+            .IsUnique(); // Garantiza que cada usuario acepta solo una vez cada aviso
+
+        modelBuilder.Entity<AceptacionAvisoPrivacidad>()
+            .Property(aa => aa.Ip)
+            .HasMaxLength(45); // IPv6 puede ser hasta 45 caracteres
+
+        modelBuilder.Entity<AceptacionAvisoPrivacidad>()
+            .Property(aa => aa.UserAgent)
+            .HasMaxLength(500);
+
+        modelBuilder.Entity<AceptacionAvisoPrivacidad>()
+            .HasOne(aa => aa.Usuario)
+            .WithMany()
+            .HasForeignKey(aa => aa.UsuarioId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // === Reinscripcion Configuration ===
+        modelBuilder.Entity<Reinscripcion>()
+            .HasKey(r => r.Id);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .HasIndex(r => new { r.AlumnoId, r.CicloDestinoId })
+            .IsUnique(); // Un alumno una reinscripción por ciclo
+
+        modelBuilder.Entity<Reinscripcion>()
+            .Property(r => r.Estado)
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .Property(r => r.MotivoBloqueo)
+            .HasMaxLength(100);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .Property(r => r.SaldoAlMomento)
+            .HasPrecision(18, 2);
+
+        // Foreign Keys
+        modelBuilder.Entity<Reinscripcion>()
+            .HasOne(r => r.Alumno)
+            .WithMany()
+            .HasForeignKey(r => r.AlumnoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .HasOne(r => r.CicloOrigen)
+            .WithMany()
+            .HasForeignKey(r => r.CicloOrigenId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .HasOne(r => r.GrupoOrigen)
+            .WithMany()
+            .HasForeignKey(r => r.GrupoOrigenId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .HasOne(r => r.CicloDestino)
+            .WithMany()
+            .HasForeignKey(r => r.CicloDestinoId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Reinscripcion>()
+            .HasOne(r => r.GrupoDestino)
+            .WithMany()
+            .HasForeignKey(r => r.GrupoDestinoId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
