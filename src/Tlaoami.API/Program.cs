@@ -33,6 +33,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IConceptosCobroService, ConceptosCobroService>();
 builder.Services.AddScoped<IReglasCobroService, ReglasCobroService>();
 builder.Services.AddScoped<IAvisoPrivacidadService, AvisoPrivacidadService>();
+builder.Services.AddScoped<ISalonService, SalonService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>

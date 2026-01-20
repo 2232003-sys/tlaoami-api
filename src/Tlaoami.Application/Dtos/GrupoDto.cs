@@ -11,6 +11,8 @@ namespace Tlaoami.Application.Dtos
         public int? Capacidad { get; set; }
         public Guid CicloEscolarId { get; set; }
         public string? CicloNombre { get; set; }
+        public Guid? SalonId { get; set; }
+        public string? SalonCodigo { get; set; }
     }
 
     public class GrupoCreateDto

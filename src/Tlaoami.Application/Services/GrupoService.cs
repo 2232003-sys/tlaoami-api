@@ -23,6 +23,7 @@ namespace Tlaoami.Application.Services
         {
             var grupos = await _context.Grupos
                 .Include(g => g.CicloEscolar)
+                .Include(g => g.Salon)
                 .ToListAsync();
             return grupos.Select(MapToDto);
         }
@@ -31,6 +32,7 @@ namespace Tlaoami.Application.Services
         {
             var grupos = await _context.Grupos
                 .Include(g => g.CicloEscolar)
+                .Include(g => g.Salon)
                 .Where(g => g.CicloEscolarId == cicloId)
                 .ToListAsync();
             return grupos.Select(MapToDto);
@@ -40,6 +42,7 @@ namespace Tlaoami.Application.Services
         {
             var grupo = await _context.Grupos
                 .Include(g => g.CicloEscolar)
+                .Include(g => g.Salon)
                 .FirstOrDefaultAsync(g => g.Id == id);
             return grupo != null ? MapToDto(grupo) : null;
         }
@@ -109,7 +112,9 @@ namespace Tlaoami.Application.Services
                 Turno = grupo.Turno,
                 Capacidad = grupo.Capacidad,
                 CicloEscolarId = grupo.CicloEscolarId,
-                CicloNombre = grupo.CicloEscolar?.Nombre
+                CicloNombre = grupo.CicloEscolar?.Nombre,
+                SalonId = grupo.SalonId,
+                SalonCodigo = grupo.Salon?.Codigo
             };
         }
     }

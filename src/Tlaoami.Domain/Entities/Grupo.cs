@@ -12,6 +12,10 @@ namespace Tlaoami.Domain.Entities
         public int? Capacidad { get; set; }  // Número máximo de alumnos; null = sin límite
         public Guid CicloEscolarId { get; set; }
         public CicloEscolar? CicloEscolar { get; set; }
+        
+        // Relación con Salón (Fase 1 - Primaria)
+        public Guid? SalonId { get; set; }
+        public Salon? Salon { get; set; }
 
         public ICollection<AlumnoGrupo> Alumnos { get; set; } = new List<AlumnoGrupo>();
     }
