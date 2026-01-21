@@ -45,6 +45,7 @@ namespace Tlaoami.Application.Mappers
             {
                 Id = pago.Id,
                 FacturaId = pago.FacturaId,
+                AlumnoId = pago.AlumnoId,
                 IdempotencyKey = pago.IdempotencyKey,
                 Monto = pago.Monto,
                 FechaPago = pago.FechaPago,

@@ -27,7 +27,7 @@ public class PagoService : IPagoService
 
         var existing = await _context.Pagos
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.FacturaId == pagoCreateDto.FacturaId && p.IdempotencyKey == pagoCreateDto.IdempotencyKey);
+            .FirstOrDefaultAsync(p => p.IdempotencyKey == pagoCreateDto.IdempotencyKey);
         if (existing != null)
         {
             return (MappingFunctions.ToPagoDto(existing), false);
@@ -71,7 +71,7 @@ public class PagoService : IPagoService
             // Concurrencia: otro proceso grabó el mismo (FacturaId, IdempotencyKey); recupera el existente y responde 200.
             _context.Entry(pago).State = EntityState.Detached;
             var concurrent = await _context.Pagos.AsNoTracking()
-                .FirstOrDefaultAsync(p => p.FacturaId == pagoCreateDto.FacturaId && p.IdempotencyKey == pagoCreateDto.IdempotencyKey);
+                .FirstOrDefaultAsync(p => p.IdempotencyKey == pagoCreateDto.IdempotencyKey);
             if (concurrent != null)
                 return (MappingFunctions.ToPagoDto(concurrent), false);
             throw;

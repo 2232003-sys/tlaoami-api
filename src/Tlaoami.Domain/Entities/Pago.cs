@@ -5,7 +5,8 @@ namespace Tlaoami.Domain.Entities
     public class Pago
     {
         public Guid Id { get; set; }
-        public Guid FacturaId { get; set; }
+        public Guid? FacturaId { get; set; }
+        public Guid? AlumnoId { get; set; }
         public string IdempotencyKey { get; set; } = string.Empty;
         public decimal Monto { get; set; }
         public DateTime FechaPago { get; set; }

@@ -59,9 +59,10 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
             }
         }
 
+        Factura? factura = null;
         if (facturaId.HasValue)
         {
-            var factura = await _context.Facturas.FirstOrDefaultAsync(f => f.Id == facturaId.Value);
+            factura = await _context.Facturas.FirstOrDefaultAsync(f => f.Id == facturaId.Value);
             if (factura == null)
             {
                 _logger.LogWarning("Intento de conciliar con factura inexistente: {FacturaId}", facturaId.Value);
@@ -91,33 +92,43 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
         _context.MovimientosConciliacion.Add(conciliacion);
         await _context.SaveChangesAsync();
 
-        // Si se solicita, registrar pago contra la factura relacionada
-        if (crearPago && facturaId.HasValue)
+        // Si se solicita, registrar pago (con o sin factura)
+        if (crearPago)
         {
-            var factura = await _context.Facturas
-                .Include(f => f.Pagos)
-                .FirstOrDefaultAsync(f => f.Id == facturaId.Value);
-
-            if (factura != null)
+            if (movimiento.Tipo != TipoMovimiento.Deposito)
             {
-                if (movimiento.Tipo != TipoMovimiento.Deposito)
-                {
-                    throw new InvalidOperationException("Solo se pueden registrar pagos desde movimientos de tipo Depósito");
-                }
+                throw new InvalidOperationException("Solo se pueden registrar pagos desde movimientos de tipo Depósito");
+            }
 
+            if (factura == null && !alumnoId.HasValue)
+            {
+                throw new InvalidOperationException("Se requiere alumnoId para registrar un pago sin factura");
+            }
+
+            var idempotencyKey = $"BANK:{movimientoBancarioId}";
+            var existingPago = await _context.Pagos.AsNoTracking().FirstOrDefaultAsync(p => p.IdempotencyKey == idempotencyKey);
+            if (existingPago == null)
+            {
+                var metodoPago = Enum.TryParse<MetodoPago>(metodo, true, out var mt) ? mt : MetodoPago.Transferencia;
                 var pago = new Pago
                 {
                     Id = Guid.NewGuid(),
-                    FacturaId = factura.Id,
+                    FacturaId = factura?.Id,
+                    AlumnoId = alumnoId ?? factura?.AlumnoId,
+                    IdempotencyKey = idempotencyKey,
                     Monto = movimiento.Monto,
                     FechaPago = fechaPago?.ToUniversalTime() ?? movimiento.Fecha,
-                    Metodo = Enum.TryParse<MetodoPago>(metodo, true, out var mt) ? mt : MetodoPago.Transferencia,
+                    Metodo = metodoPago,
                     PaymentIntentId = movimiento.Id // correlacionar para revertir
                 };
 
                 _context.Pagos.Add(pago);
                 await _context.SaveChangesAsync();
+            }
 
+            // Recalcular factura solo si hay factura involucrada
+            if (factura != null)
+            {
                 var totalPagado = (await _context.Pagos
                     .Where(p => p.FacturaId == factura.Id)
                     .Select(p => p.Monto)

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Tlaoami.Infrastructure.Migrations
 {
     [DbContext(typeof(TlaoamiDbContext))]
-    partial class TlaoamiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260121000159_MakePagoFacturaNullable")]
+    partial class MakePagoFacturaNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -379,8 +382,7 @@ namespace Tlaoami.Infrastructure.Migrations
 
                     b.HasIndex("FacturaId");
 
-                    b.HasIndex("MovimientoBancarioId")
-                        .IsUnique();
+                    b.HasIndex("MovimientoBancarioId");
 
                     b.ToTable("MovimientosConciliacion");
                 });

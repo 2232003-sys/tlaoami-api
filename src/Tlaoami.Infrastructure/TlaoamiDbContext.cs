@@ -93,11 +93,15 @@ public class TlaoamiDbContext : DbContext
         modelBuilder.Entity<Pago>()
             .HasOne(p => p.Factura)
             .WithMany(f => f.Pagos)
-            .HasForeignKey(p => p.FacturaId);
+            .HasForeignKey(p => p.FacturaId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Pago>()
-            .HasIndex(p => new { p.FacturaId, p.IdempotencyKey })
+            .HasIndex(p => p.IdempotencyKey)
             .IsUnique();
+
+        modelBuilder.Entity<Pago>()
+            .HasIndex(p => p.FacturaId);
 
         modelBuilder.Entity<Pago>()
             .HasIndex(p => p.PaymentIntentId)
@@ -137,6 +141,10 @@ public class TlaoamiDbContext : DbContext
             .WithMany()
             .HasForeignKey(mc => mc.MovimientoBancarioId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MovimientoConciliacion>()
+            .HasIndex(mc => mc.MovimientoBancarioId)
+            .IsUnique();
 
         modelBuilder.Entity<MovimientoConciliacion>()
             .HasOne(mc => mc.Alumno)
