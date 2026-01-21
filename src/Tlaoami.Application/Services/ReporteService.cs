@@ -30,36 +30,36 @@ namespace Tlaoami.Application.Services
             // Obtener facturas no canceladas con sus pagos
             var facturasQuery = _context.Facturas
                 .AsNoTracking()
-                .Include(f => f.Alumno)
-                .ThenInclude(a => a.AsignacionesGrupo)
+                .Include(f => f.Alumno!)
+                .ThenInclude(a => a!.AsignacionesGrupo)
                 .ThenInclude(ag => ag.Grupo)
                 .Include(f => f.Pagos)
-                .Where(f => f.Estado != EstadoFactura.Cancelada);
+                .Where(f => f.Estado != EstadoFactura.Cancelada && f.Alumno != null);
 
             // Aplicar filtros
             if (cicloId.HasValue)
             {
                 facturasQuery = facturasQuery.Where(f => 
-                    f.Alumno.AsignacionesGrupo.Any(ag => ag.Activo && ag.Grupo.CicloEscolarId == cicloId.Value));
+                    f.Alumno!.AsignacionesGrupo!.Any(ag => ag.Activo && ag.Grupo != null && ag.Grupo.CicloEscolarId == cicloId.Value));
             }
 
             if (grupoId.HasValue)
             {
                 facturasQuery = facturasQuery.Where(f => 
-                    f.Alumno.AsignacionesGrupo.Any(ag => ag.Activo && ag.GrupoId == grupoId.Value));
+                    f.Alumno!.AsignacionesGrupo!.Any(ag => ag.Activo && ag.GrupoId == grupoId.Value));
             }
 
             if (grado.HasValue)
             {
                 facturasQuery = facturasQuery.Where(f => 
-                    f.Alumno.AsignacionesGrupo.Any(ag => ag.Activo && ag.Grupo.Grado == grado.Value));
+                    f.Alumno!.AsignacionesGrupo!.Any(ag => ag.Activo && ag.Grupo != null && ag.Grupo.Grado == grado.Value));
             }
 
             var facturas = await facturasQuery.ToListAsync();
 
             // Agrupar por alumno y calcular adeudos
             var adeudos = facturas
-                .GroupBy(f => f.Alumno)
+                .GroupBy(f => f.Alumno!)
                 .Select(g =>
                 {
                     var alumno = g.Key;
@@ -84,7 +84,7 @@ namespace Tlaoami.Application.Services
                     return new AdeudoDto
                     {
                         AlumnoId = alumno.Id,
-                        Matricula = alumno.Matricula,
+                        Matricula = alumno.Matricula ?? string.Empty,
                         NombreCompleto = $"{alumno.Nombre} {alumno.Apellido}",
                         Grupo = asignacionActiva?.Grupo?.Nombre,
                         Grado = asignacionActiva?.Grupo?.Grado,
@@ -110,7 +110,7 @@ namespace Tlaoami.Application.Services
                 .AsNoTracking()
                 .Include(p => p.Factura)
                 .ThenInclude(f => f!.Alumno)
-                .ThenInclude(a => a.AsignacionesGrupo)
+                .ThenInclude(a => a!.AsignacionesGrupo)
                 .ThenInclude(ag => ag.Grupo)
                 .Where(p => p.FechaPago >= from && p.FechaPago <= to);
 
@@ -119,7 +119,7 @@ namespace Tlaoami.Application.Services
             {
                 pagosQuery = pagosQuery.Where(p => 
                     p.Factura != null && 
-                    p.Factura.Alumno.AsignacionesGrupo.Any(ag => ag.Activo && ag.GrupoId == grupoId.Value));
+                    p.Factura.Alumno!.AsignacionesGrupo!.Any(ag => ag.Activo && ag.GrupoId == grupoId.Value));
             }
 
             // Filtro por método

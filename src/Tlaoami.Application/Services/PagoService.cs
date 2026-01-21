@@ -35,6 +35,7 @@ public class PagoService : IPagoService
 
         var factura = await _context.Facturas
             .Include(f => f.Pagos)
+            .Include(f => f.Lineas)
             .FirstOrDefaultAsync(f => f.Id == pagoCreateDto.FacturaId);
         if (factura == null)
         {
@@ -60,7 +61,7 @@ public class PagoService : IPagoService
 
         _context.Pagos.Add(pago);
         factura.Pagos.Add(pago);
-        factura.RecalculateFrom(null, factura.Pagos);
+        factura.RecalculateFrom(factura.Lineas.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)), factura.Pagos);
         try
         {
             await _context.SaveChangesAsync();

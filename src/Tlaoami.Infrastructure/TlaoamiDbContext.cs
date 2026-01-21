@@ -12,6 +12,7 @@ public class TlaoamiDbContext : DbContext
     public DbSet<Grupo> Grupos { get; set; }
     public DbSet<AlumnoGrupo> AsignacionesGrupo { get; set; }
     public DbSet<Factura> Facturas { get; set; }
+    public DbSet<FacturaLinea> FacturaLineas { get; set; }
     public DbSet<Pago> Pagos { get; set; }
     public DbSet<PaymentIntent> PaymentIntents { get; set; }
     public DbSet<MovimientoBancario> MovimientosBancarios { get; set; }
@@ -19,6 +20,9 @@ public class TlaoamiDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<ConceptoCobro> ConceptosCobro { get; set; }
     public DbSet<ReglaCobroPorCiclo> ReglasCobro { get; set; }
+    public DbSet<ReglaColegiatura> ReglasColegiatura { get; set; }
+    public DbSet<BecaAlumno> BecasAlumno { get; set; }
+    public DbSet<ReglaRecargo> ReglasRecargo { get; set; }
     public DbSet<AvisoPrivacidad> AvisosPrivacidad { get; set; }
     public DbSet<AceptacionAvisoPrivacidad> AceptacionesAvisoPrivacidad { get; set; }
     public DbSet<Reinscripcion> Reinscripciones { get; set; }
@@ -77,9 +81,62 @@ public class TlaoamiDbContext : DbContext
             .HasConversion<string>();
 
         modelBuilder.Entity<Factura>()
+            .Property(f => f.TipoDocumento)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<Factura>()
+            .Property(f => f.Periodo)
+            .HasMaxLength(7);
+
+        modelBuilder.Entity<Factura>()
             .HasOne(f => f.Alumno)
             .WithMany(a => a.Facturas) // Explicitly configure the relationship
             .HasForeignKey(f => f.AlumnoId);
+
+        modelBuilder.Entity<Factura>()
+            .HasOne(f => f.ConceptoCobro)
+            .WithMany()
+            .HasForeignKey(f => f.ConceptoCobroId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Factura>()
+            .HasIndex(f => new { f.AlumnoId, f.Periodo, f.ConceptoCobroId })
+            .IsUnique()
+            .HasFilter("\"Estado\" <> 'Cancelada'")
+            .HasDatabaseName("IX_Factura_Alumno_Periodo_Concepto");
+
+        // FacturaLinea configuration
+        modelBuilder.Entity<FacturaLinea>()
+            .Property(fl => fl.Descripcion)
+            .HasMaxLength(500)
+            .IsRequired();
+
+        modelBuilder.Entity<FacturaLinea>()
+            .Property(fl => fl.Subtotal)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<FacturaLinea>()
+            .Property(fl => fl.Descuento)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<FacturaLinea>()
+            .Property(fl => fl.Impuesto)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<FacturaLinea>()
+            .HasOne(fl => fl.Factura)
+            .WithMany(f => f.Lineas)
+            .HasForeignKey(fl => fl.FacturaId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FacturaLinea>()
+            .HasOne(fl => fl.ConceptoCobro)
+            .WithMany()
+            .HasForeignKey(fl => fl.ConceptoCobroId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<FacturaLinea>()
+            .HasIndex(fl => new { fl.FacturaId, fl.ConceptoCobroId });
 
         // Pago configuration
         modelBuilder.Entity<Pago>()
@@ -212,6 +269,84 @@ public class TlaoamiDbContext : DbContext
         modelBuilder.Entity<ReglaCobroPorCiclo>()
             .Property(r => r.MontoBase)
             .HasPrecision(18, 2);
+
+        // ReglaColegiatura configuration
+        modelBuilder.Entity<ReglaColegiatura>()
+            .HasOne(r => r.CicloEscolar)
+            .WithMany()
+            .HasForeignKey(r => r.CicloId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReglaColegiatura>()
+            .HasOne(r => r.Grupo)
+            .WithMany()
+            .HasForeignKey(r => r.GrupoId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ReglaColegiatura>()
+            .HasOne(r => r.ConceptoCobro)
+            .WithMany()
+            .HasForeignKey(r => r.ConceptoCobroId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReglaColegiatura>()
+            .Property(r => r.Turno)
+            .HasMaxLength(50);
+
+        modelBuilder.Entity<ReglaColegiatura>()
+            .Property(r => r.MontoBase)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<ReglaColegiatura>()
+            .HasIndex(r => new { r.CicloId, r.GrupoId, r.Grado, r.Turno, r.ConceptoCobroId })
+            .IsUnique()
+            .HasDatabaseName("IX_ReglaColegiatura_Unique");
+
+        // BecaAlumno configuration
+        modelBuilder.Entity<BecaAlumno>()
+            .HasOne(b => b.Alumno)
+            .WithMany()
+            .HasForeignKey(b => b.AlumnoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BecaAlumno>()
+            .HasOne(b => b.Ciclo)
+            .WithMany()
+            .HasForeignKey(b => b.CicloId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BecaAlumno>()
+            .Property(b => b.Tipo)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<BecaAlumno>()
+            .Property(b => b.Valor)
+            .HasPrecision(18, 2);
+
+        modelBuilder.Entity<BecaAlumno>()
+            .HasIndex(b => new { b.AlumnoId, b.CicloId })
+            .IsUnique();
+
+        // ReglaRecargo configuration
+        modelBuilder.Entity<ReglaRecargo>()
+            .HasOne(r => r.CicloEscolar)
+            .WithMany()
+            .HasForeignKey(r => r.CicloId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReglaRecargo>()
+            .HasOne(r => r.ConceptoCobro)
+            .WithMany()
+            .HasForeignKey(r => r.ConceptoCobroId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ReglaRecargo>()
+            .Property(r => r.Porcentaje)
+            .HasPrecision(18, 4);
+
+        modelBuilder.Entity<ReglaRecargo>()
+            .HasIndex(r => r.CicloId)
+            .IsUnique();
 
         // === AvisoPrivacidad Configuration ===
         modelBuilder.Entity<AvisoPrivacidad>()

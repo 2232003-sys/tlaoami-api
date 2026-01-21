@@ -19,5 +19,9 @@ namespace Tlaoami.Application.Dtos
         public DateTime FechaEmision { get; set; }
         
         public DateTime? FechaVencimiento { get; set; }
+
+        public string? Periodo { get; set; }
+
+        public Guid? ConceptoCobroId { get; set; }
     }
 }

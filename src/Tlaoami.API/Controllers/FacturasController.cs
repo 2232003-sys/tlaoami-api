@@ -18,6 +18,24 @@ namespace Tlaoami.API.Controllers
             _facturaService = facturaService;
         }
 
+        [HttpPost("{id}/emitir-recibo")]
+        public async Task<ActionResult> EmitirRecibo(Guid id)
+        {
+            try
+            {
+                await _facturaService.EmitirReciboAsync(id);
+                return Ok(new { message = "Recibo emitido (idempotente)" });
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Conflict(new { error = ex.Message });
+            }
+        }
+
         [HttpPost("{id}/emitir")]
         public async Task<ActionResult> EmitirFactura(Guid id)
         {

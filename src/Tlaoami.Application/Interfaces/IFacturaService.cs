@@ -24,5 +24,6 @@ namespace Tlaoami.Application.Interfaces
         // Acciones de negocio
         Task EmitirFacturaAsync(Guid id);
         Task CancelarFacturaAsync(Guid id, string? motivo = null);
+        Task EmitirReciboAsync(Guid id);
     }
 }

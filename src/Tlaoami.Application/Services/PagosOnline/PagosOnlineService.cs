@@ -288,6 +288,7 @@ public class PagosOnlineService : IPagosOnlineService
 
         var factura = await _context.Facturas
             .Include(f => f.Pagos)
+            .Include(f => f.Lineas)
             .FirstOrDefaultAsync(f => f.Id == paymentIntent.FacturaId);
 
         if (factura == null)
@@ -308,7 +309,7 @@ public class PagosOnlineService : IPagosOnlineService
 
         _context.Pagos.Add(pago);
         factura.Pagos.Add(pago);
-        factura.RecalculateFrom(null, factura.Pagos);
+        factura.RecalculateFrom(factura.Lineas.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)), factura.Pagos);
 
         if (saveChanges)
         {

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using Tlaoami.Domain.Enums;
 
 namespace Tlaoami.Domain.Entities
 {
@@ -12,10 +14,21 @@ namespace Tlaoami.Domain.Entities
 
         [Required]
         public string? NumeroFactura { get; set; }
-        
+
         [Required]
         [StringLength(500)]
         public string Concepto { get; set; } = string.Empty;
+
+        [StringLength(7)]
+        public string? Periodo { get; set; }
+
+        public Guid? ConceptoCobroId { get; set; }
+        public ConceptoCobro? ConceptoCobro { get; set; }
+
+        public TipoDocumento TipoDocumento { get; set; } = TipoDocumento.Factura;
+
+        public string? ReciboFolio { get; set; }
+        public DateTime? ReciboEmitidoAtUtc { get; set; }
         
         public decimal Monto { get; set; }
         public DateTime FechaEmision { get; set; }
@@ -23,13 +36,14 @@ namespace Tlaoami.Domain.Entities
 
         // Estado de la factura (flujo de emisión/pago/cancelación)
         [Required]
-        public EstadoFactura Estado { get; set; } = EstadoFactura.Pendiente;
+        public EstadoFactura Estado { get; set; } = EstadoFactura.Borrador;
 
         // Timestamps de acciones de negocio
         public DateTime? IssuedAt { get; set; }
         public DateTime? CanceledAt { get; set; }
         public string? CancelReason { get; set; }
         public ICollection<Pago> Pagos { get; set; } = new List<Pago>();
+        public ICollection<FacturaLinea> Lineas { get; set; } = new List<FacturaLinea>();
 
         /// <summary>
         /// Recalcula totales y estado a partir de líneas (opcionales) y pagos confirmados.
@@ -45,10 +59,11 @@ namespace Tlaoami.Domain.Entities
         /// </summary>
         public void RecalculateFrom(IEnumerable<FacturaRecalcLine>? lines, IEnumerable<Pago> payments, decimal tolerance = 0.01m)
         {
+            var recalcLines = (lines ?? Lineas?.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)) ?? Enumerable.Empty<FacturaRecalcLine>()).ToList();
             decimal subtotal = 0m, descuentos = 0m, impuestos = 0m;
-            if (lines != null)
+            if (recalcLines.Any())
             {
-                foreach (var l in lines)
+                foreach (var l in recalcLines)
                 {
                     subtotal += l.Subtotal;
                     descuentos += l.Descuento;
@@ -56,7 +71,7 @@ namespace Tlaoami.Domain.Entities
                 }
             }
 
-            var total = (lines != null && lines.Any())
+            var total = recalcLines.Any()
                 ? subtotal - descuentos + impuestos
                 : Monto; // respetar modelo actual si no hay líneas
 
@@ -69,7 +84,7 @@ namespace Tlaoami.Domain.Entities
             var balanced = Math.Abs(total - paidAmount) <= tolerance;
 
             // Si definimos líneas, reflejar el total en Monto (total de la factura)
-            if (lines != null && lines.Any())
+            if (recalcLines.Any())
             {
                 Monto = total;
             }
@@ -121,6 +136,12 @@ namespace Tlaoami.Domain.Entities
         Vencida = 3,
         Cancelada = 4,
         Borrador = 5
+    }
+
+    public enum TipoDocumento
+    {
+        Factura = 0,
+        Recibo = 1
     }
 
     /// <summary>
