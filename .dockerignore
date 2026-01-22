@@ -1,0 +1,9 @@
+bin/
+obj/
+**/*.user
+**/*.swp
+**/*.csproj.user
+.vscode/
+.git/
+**/node_modules
+Dockerfile
