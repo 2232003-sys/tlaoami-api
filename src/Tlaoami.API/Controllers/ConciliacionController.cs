@@ -81,7 +81,8 @@ namespace Tlaoami.API.Controllers
                     request.Comentario,
                     request.CrearPago,
                     request.Metodo ?? "Transferencia",
-                    request.FechaPago);
+                    request.FechaPago,
+                    request.AplicarACuenta);
                 
                 return Ok(new { message = "Movimiento conciliado correctamente" });
             }
@@ -144,6 +145,24 @@ namespace Tlaoami.API.Controllers
                 return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
             }
         }
+
+        [HttpGet("movimientos/{movimientoBancarioId}/detalle")]
+        public async Task<ActionResult<MovimientoDetalleDto>> GetMovimientoDetalle(Guid movimientoBancarioId)
+        {
+            try
+            {
+                var detalle = await _consultaService.GetMovimientoDetalleAsync(movimientoBancarioId);
+                return Ok(detalle);
+            }
+            catch (ApplicationException ex)
+            {
+                return NotFound(new ProblemDetails { Title = "No encontrado", Detail = ex.Message, Status = StatusCodes.Status404NotFound });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
+            }
+        }
     }
 
     public record ConciliarRequest(
@@ -153,7 +172,8 @@ namespace Tlaoami.API.Controllers
         string? Comentario,
         bool CrearPago = false,
         string? Metodo = "Transferencia",
-        DateTime? FechaPago = null);
+        DateTime? FechaPago = null,
+        bool AplicarACuenta = false);
 
     public record RevertirRequest(Guid MovimientoBancarioId);
 }

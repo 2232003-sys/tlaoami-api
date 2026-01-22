@@ -10,6 +10,7 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
 {
     private readonly TlaoamiDbContext _context;
     private readonly ILogger<ConciliacionBancariaService> _logger;
+    private const decimal TOLERANCE = 0.01m;
 
     public ConciliacionBancariaService(
         TlaoamiDbContext context,
@@ -26,7 +27,8 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
         string? comentario,
         bool crearPago = false,
         string metodo = "Transferencia",
-        DateTime? fechaPago = null)
+        DateTime? fechaPago = null,
+        bool aplicarACuenta = false)
     {
         var movimiento = await _context.MovimientosBancarios
             .FirstOrDefaultAsync(m => m.Id == movimientoBancarioId);
@@ -59,6 +61,22 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
             }
         }
 
+        // Si aplicarACuenta, buscar la factura más antigua pendiente del alumno
+        if (aplicarACuenta && alumnoId.HasValue && !facturaId.HasValue)
+        {
+            var facturaFIFO = await _context.Facturas
+                .Where(f => f.AlumnoId == alumnoId.Value &&
+                           (f.Estado == EstadoFactura.Pendiente || f.Estado == EstadoFactura.ParcialmentePagada))
+                .OrderBy(f => f.FechaVencimiento)
+                .ThenBy(f => f.FechaEmision)
+                .FirstOrDefaultAsync();
+
+            if (facturaFIFO != null)
+            {
+                facturaId = facturaFIFO.Id;
+            }
+        }
+
         Factura? factura = null;
         if (facturaId.HasValue)
         {
@@ -69,7 +87,6 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
                 throw new ApplicationException($"Factura con ID {facturaId.Value} no encontrada");
             }
 
-            // Validar que la factura no esté completamente pagada
             if (factura.Estado == EstadoFactura.Pagada)
             {
                 _logger.LogWarning("Intento de conciliar movimiento con factura ya pagada: {FacturaId}", facturaId.Value);
@@ -92,7 +109,6 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
         _context.MovimientosConciliacion.Add(conciliacion);
         await _context.SaveChangesAsync();
 
-        // Si se solicita, registrar pago (con o sin factura)
         if (crearPago)
         {
             if (movimiento.Tipo != TipoMovimiento.Deposito)
@@ -105,48 +121,13 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
                 throw new InvalidOperationException("Se requiere alumnoId para registrar un pago sin factura");
             }
 
-            var idempotencyKey = $"BANK:{movimientoBancarioId}";
-            var existingPago = await _context.Pagos.AsNoTracking().FirstOrDefaultAsync(p => p.IdempotencyKey == idempotencyKey);
-            if (existingPago == null)
+            if (facturaId.HasValue)
             {
-                var metodoPago = Enum.TryParse<MetodoPago>(metodo, true, out var mt) ? mt : MetodoPago.Transferencia;
-                var pago = new Pago
-                {
-                    Id = Guid.NewGuid(),
-                    FacturaId = factura?.Id,
-                    AlumnoId = alumnoId ?? factura?.AlumnoId,
-                    IdempotencyKey = idempotencyKey,
-                    Monto = movimiento.Monto,
-                    FechaPago = fechaPago?.ToUniversalTime() ?? movimiento.Fecha,
-                    Metodo = metodoPago,
-                    PaymentIntentId = movimiento.Id // correlacionar para revertir
-                };
-
-                _context.Pagos.Add(pago);
-                await _context.SaveChangesAsync();
+                await AplicarPagoAFacturaAsync(facturaId.Value, movimiento, metodo, fechaPago);
             }
-
-            // Recalcular factura solo si hay factura involucrada
-            if (factura != null)
+            else if (alumnoId.HasValue)
             {
-                var totalPagado = (await _context.Pagos
-                    .Where(p => p.FacturaId == factura.Id)
-                    .Select(p => p.Monto)
-                    .ToListAsync()).Sum();
-
-                var saldo = factura.Monto - totalPagado;
-                var hoy = DateTime.UtcNow.Date;
-
-                if (saldo <= 0)
-                    factura.Estado = EstadoFactura.Pagada;
-                else if (hoy > factura.FechaVencimiento.Date)
-                    factura.Estado = EstadoFactura.Vencida;
-                else if (totalPagado > 0)
-                    factura.Estado = EstadoFactura.ParcialmentePagada;
-                else
-                    factura.Estado = EstadoFactura.Pendiente;
-
-                await _context.SaveChangesAsync();
+                await AplicarAbonoACuentaAsync(alumnoId.Value, movimiento, metodo, fechaPago);
             }
         }
 
@@ -155,69 +136,280 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
             movimientoBancarioId, alumnoId, facturaId);
     }
 
+    private async Task AplicarPagoAFacturaAsync(
+        Guid facturaId,
+        MovimientoBancario movimiento,
+        string metodo,
+        DateTime? fechaPago)
+    {
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                var factura = await _context.Facturas
+                    .Include(f => f.Pagos)
+                    .Include(f => f.Lineas)
+                    .FirstOrDefaultAsync(f => f.Id == facturaId);
+
+                if (factura == null)
+                    throw new ApplicationException($"Factura con ID {facturaId} no encontrada");
+
+                var idempotencyKey = $"BANK:{movimiento.Id}";
+                var existingPago = await _context.Pagos
+                    .FirstOrDefaultAsync(p => p.IdempotencyKey == idempotencyKey);
+
+                if (existingPago != null)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogInformation("Pago ya existe para movimiento {MovId}", movimiento.Id);
+                    return;
+                }
+
+                var metodoPago = Enum.TryParse<MetodoPago>(metodo, true, out var mt) 
+                    ? mt 
+                    : MetodoPago.Transferencia;
+
+                var pago = new Pago
+                {
+                    Id = Guid.NewGuid(),
+                    FacturaId = facturaId,
+                    AlumnoId = factura.AlumnoId,
+                    IdempotencyKey = idempotencyKey,
+                    Monto = movimiento.Monto,
+                    FechaPago = (fechaPago?.ToUniversalTime() ?? movimiento.Fecha).ToUniversalTime(),
+                    Metodo = metodoPago
+                };
+
+                _context.Pagos.Add(pago);
+                factura.Pagos.Add(pago);
+
+                factura.RecalculateFrom(
+                    factura.Lineas.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)),
+                    factura.Pagos);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Pago de ${Monto} aplicado a factura {FacturaId}",
+                    movimiento.Monto,
+                    facturaId);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al aplicar pago a factura {FacturaId}", facturaId);
+                throw;
+            }
+        }
+    }
+
+    private async Task AplicarAbonoACuentaAsync(
+        Guid alumnoId,
+        MovimientoBancario movimiento,
+        string metodo,
+        DateTime? fechaPago)
+    {
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                var idempotencyKeyBase = $"BANK:{movimiento.Id}";
+                var existingPagos = await _context.Pagos
+                    .Where(p => p.IdempotencyKey.StartsWith(idempotencyKeyBase))
+                    .ToListAsync();
+
+                if (existingPagos.Any())
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogInformation("Pagos ya existen para movimiento {MovId}", movimiento.Id);
+                    return;
+                }
+
+                var facturasPendientes = await _context.Facturas
+                    .Include(f => f.Pagos)
+                    .Include(f => f.Lineas)
+                    .Where(f => f.AlumnoId == alumnoId
+                             && f.Estado != EstadoFactura.Pagada
+                             && f.Estado != EstadoFactura.Cancelada
+                             && f.Estado != EstadoFactura.Borrador)
+                    .OrderBy(f => f.FechaVencimiento)
+                    .ThenBy(f => f.FechaEmision)
+                    .ToListAsync();
+
+                if (!facturasPendientes.Any())
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogWarning(
+                        "Alumno {AlumnoId} no tiene facturas pendientes. Pago NO aplicado",
+                        alumnoId);
+                    throw new InvalidOperationException(
+                        "No hay facturas pendientes para aplicar el abono");
+                }
+
+                decimal montoRestante = movimiento.Monto;
+                int secuencia = 0;
+                var metodoPago = Enum.TryParse<MetodoPago>(metodo, true, out var mt)
+                    ? mt
+                    : MetodoPago.Transferencia;
+                var fechaPagoUtc = (fechaPago?.ToUniversalTime() ?? movimiento.Fecha).ToUniversalTime();
+
+                foreach (var factura in facturasPendientes)
+                {
+                    if (montoRestante <= TOLERANCE) break;
+
+                    factura.RecalculateFrom(
+                        factura.Lineas.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)),
+                        factura.Pagos ?? Enumerable.Empty<Pago>());
+
+                    var saldoFactura = factura.Monto - (factura.Pagos?.Sum(p => p.Monto) ?? 0m);
+
+                    if (saldoFactura <= TOLERANCE) continue;
+
+                    var montoAAplicar = Math.Min(saldoFactura, montoRestante);
+
+                    var idempotencyKey = $"{idempotencyKeyBase}:F{secuencia}";
+                    var pago = new Pago
+                    {
+                        Id = Guid.NewGuid(),
+                        FacturaId = factura.Id,
+                        AlumnoId = alumnoId,
+                        IdempotencyKey = idempotencyKey,
+                        Monto = montoAAplicar,
+                        FechaPago = fechaPagoUtc,
+                        Metodo = metodoPago
+                    };
+
+                    _context.Pagos.Add(pago);
+                    factura.Pagos.Add(pago);
+
+                    factura.RecalculateFrom(
+                        factura.Lineas.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)),
+                        factura.Pagos);
+
+                    montoRestante -= montoAAplicar;
+                    secuencia++;
+
+                    _logger.LogInformation(
+                        "Aplicado pago de ${Monto} a factura {FacturaId} (secuencia {Seq})",
+                        montoAAplicar,
+                        factura.Id,
+                        secuencia - 1);
+                }
+
+                if (montoRestante > TOLERANCE)
+                {
+                    var pagoAnticipo = new Pago
+                    {
+                        Id = Guid.NewGuid(),
+                        FacturaId = null,
+                        AlumnoId = alumnoId,
+                        IdempotencyKey = $"{idempotencyKeyBase}:ANTICIPO",
+                        Monto = montoRestante,
+                        FechaPago = fechaPagoUtc,
+                        Metodo = metodoPago
+                    };
+
+                    _context.Pagos.Add(pagoAnticipo);
+
+                    _logger.LogInformation(
+                        "Creado pago anticipo de ${Monto} para alumno {AlumnoId}",
+                        montoRestante,
+                        alumnoId);
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation(
+                    "Abono de ${Monto} aplicado a cuenta del alumno {AlumnoId} en {Count} facturas",
+                    movimiento.Monto,
+                    alumnoId,
+                    secuencia);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al aplicar abono a cuenta del alumno {AlumnoId}", alumnoId);
+                throw;
+            }
+        }
+    }
+
     public async Task RevertirConciliacionAsync(Guid movimientoBancarioId)
     {
-        var movimiento = await _context.MovimientosBancarios
-            .FirstOrDefaultAsync(m => m.Id == movimientoBancarioId);
-
-        if (movimiento == null)
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
-            _logger.LogWarning("Intento de revertir conciliación de movimiento inexistente: {MovimientoId}", movimientoBancarioId);
-            throw new ApplicationException($"Movimiento bancario con ID {movimientoBancarioId} no encontrado");
-        }
-
-        if (movimiento.Estado != EstadoConciliacion.Conciliado)
-        {
-            _logger.LogInformation("Movimiento {MovimientoId} no está conciliado. Operación es idempotente", movimientoBancarioId);
-            return;
-        }
-
-        var conciliacion = await _context.MovimientosConciliacion
-            .FirstOrDefaultAsync(mc => mc.MovimientoBancarioId == movimientoBancarioId);
-
-        if (conciliacion != null)
-        {
-            // Revertir pago(s) asociados por PaymentIntentId (correlación)
-            var pagos = await _context.Pagos
-                .Where(p => p.PaymentIntentId == movimientoBancarioId)
-                .ToListAsync();
-
-            if (pagos.Any())
+            try
             {
-                var facturaIds = pagos.Select(p => p.FacturaId).Distinct().ToList();
-                _context.Pagos.RemoveRange(pagos);
-                await _context.SaveChangesAsync();
+                var movimiento = await _context.MovimientosBancarios
+                    .FirstOrDefaultAsync(m => m.Id == movimientoBancarioId);
 
-                foreach (var fid in facturaIds)
+                if (movimiento == null)
                 {
-                    var factura = await _context.Facturas
-                        .Include(f => f.Pagos)
-                        .FirstOrDefaultAsync(f => f.Id == fid);
-                    if (factura != null)
-                    {
-                        var totalPagado = factura.Pagos?.Sum(p => p.Monto) ?? 0m;
-                        var saldo = factura.Monto - totalPagado;
-                        var hoy = DateTime.UtcNow.Date;
-
-                        if (saldo <= 0)
-                            factura.Estado = EstadoFactura.Pagada;
-                        else if (hoy > factura.FechaVencimiento.Date)
-                            factura.Estado = EstadoFactura.Vencida;
-                        else if (totalPagado > 0)
-                            factura.Estado = EstadoFactura.ParcialmentePagada;
-                        else
-                            factura.Estado = EstadoFactura.Pendiente;
-                    }
+                    await transaction.RollbackAsync();
+                    _logger.LogWarning("Intento de revertir conciliación de movimiento inexistente: {MovimientoId}", movimientoBancarioId);
+                    throw new ApplicationException($"Movimiento bancario con ID {movimientoBancarioId} no encontrado");
                 }
+
+                if (movimiento.Estado != EstadoConciliacion.Conciliado)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogInformation("Movimiento {MovimientoId} no está conciliado. Operación es idempotente", movimientoBancarioId);
+                    return;
+                }
+
+                var conciliacion = await _context.MovimientosConciliacion
+                    .FirstOrDefaultAsync(mc => mc.MovimientoBancarioId == movimientoBancarioId);
+
+                if (conciliacion != null)
+                {
+                    var idempotencyKeyPrefix = $"BANK:{movimientoBancarioId}";
+                    var pagos = await _context.Pagos
+                        .Where(p => p.IdempotencyKey.StartsWith(idempotencyKeyPrefix))
+                        .ToListAsync();
+
+                    if (pagos.Any())
+                    {
+                        var facturaIds = pagos
+                            .Where(p => p.FacturaId.HasValue)
+                            .Select(p => p.FacturaId.Value)
+                            .Distinct()
+                            .ToList();
+
+                        _context.Pagos.RemoveRange(pagos);
+                        await _context.SaveChangesAsync();
+
+                        foreach (var fid in facturaIds)
+                        {
+                            var factura = await _context.Facturas
+                                .Include(f => f.Pagos)
+                                .Include(f => f.Lineas)
+                                .FirstOrDefaultAsync(f => f.Id == fid);
+                            if (factura != null)
+                            {
+                                factura.RecalculateFrom(
+                                    factura.Lineas.Select(l => new FacturaRecalcLine(l.Subtotal, l.Descuento, l.Impuesto)),
+                                    factura.Pagos ?? Enumerable.Empty<Pago>());
+                            }
+                        }
+                    }
+
+                    _context.MovimientosConciliacion.Remove(conciliacion);
+                }
+
+                movimiento.Estado = EstadoConciliacion.NoConciliado;
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Conciliación del movimiento {MovimientoId} revertida correctamente", movimientoBancarioId);
             }
-
-            _context.MovimientosConciliacion.Remove(conciliacion);
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error al revertir conciliación del movimiento {MovimientoId}", movimientoBancarioId);
+                throw;
+            }
         }
-
-        movimiento.Estado = EstadoConciliacion.NoConciliado;
-
-        await _context.SaveChangesAsync();
-
-        _logger.LogInformation("Conciliación del movimiento {MovimientoId} revertida correctamente", movimientoBancarioId);
     }
 }

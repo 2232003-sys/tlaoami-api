@@ -9,7 +9,8 @@ public interface IConciliacionBancariaService
         string? comentario,
         bool crearPago = false,
         string metodo = "Transferencia",
-        DateTime? fechaPago = null);
+        DateTime? fechaPago = null,
+        bool aplicarACuenta = false);
 
     Task RevertirConciliacionAsync(Guid movimientoBancarioId);
 }

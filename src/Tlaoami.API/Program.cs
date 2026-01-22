@@ -158,68 +158,14 @@ app.UsePrivacidadCompliance();
 
 app.MapControllers();
 
-// Serve a simple HTML page to display the data
-app.MapGet("/", () => {
-    return Results.Content("""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Tlaoami Data</title>
-            <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
-            <style>
-                body { padding: 2rem; }
-                #search-container { margin-bottom: 1rem; }
-                #alumnos-list { margin-top: 1rem; }
-            </style>
-        </head>
-        <body>
-            <h1>Alumnos</h1>
-            
-            <div id="search-container">
-                <input type="text" id="alumno-id-input" placeholder="Introduce el ID del alumno" />
-                <button onclick="fetchAlumnoById()">Buscar Alumno</button>
-            </div>
+// Health check endpoint para conexión del frontend
+app.MapGet("/api/v1/health", () => Results.Ok(new { status = "connected", timestamp = DateTime.UtcNow }));
 
-            <h2>Alumno Específico</h2>
-            <pre id="json-output-single"></pre>
-
-            <h2 id="alumnos-list">Lista Completa de Alumnos</h2>
-            <pre id="json-output-all"></pre>
-
-            <script>
-                function fetchAlumnoById() {
-                    const alumnoId = document.getElementById('alumno-id-input').value;
-                    if (!alumnoId) {
-                        document.getElementById('json-output-single').textContent = 'Por favor, introduce un ID.';
-                        return;
-                    }
-                    
-                    document.getElementById('json-output-single').textContent = 'Cargando...';
-                    fetch(`/api/alumnos/${alumnoId}`)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`Error: ${response.status} ${response.statusText}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            document.getElementById('json-output-single').textContent = JSON.stringify(data, null, 2);
-                        })
-                        .catch(error => {
-                            document.getElementById('json-output-single').textContent = `No se pudo encontrar el alumno. ${error.message}`;
-                        });
-                }
-
-                // Fetch all alumnos on page load
-                fetch('/api/alumnos')
-                    .then(response => response.json())
-                    .then(data => {
-                        document.getElementById('json-output-all').textContent = JSON.stringify(data, null, 2);
-                    });
-            </script>
-        </body>
-        </html>
-    """, "text/html");
+// Redirect root to frontend
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("http://localhost:3001", permanent: false);
+    return Task.CompletedTask;
 });
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "3000";

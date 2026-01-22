@@ -94,7 +94,16 @@ namespace Tlaoami.Application.Mappers
             var facturasPendientes = alumno.Facturas.Where(f => f.Estado != EstadoFactura.Pagada).ToList();
 
             var totalFacturado = alumno.Facturas.Sum(f => f.Monto);
-            var totalPagado = alumno.Facturas.SelectMany(f => f.Pagos ?? Enumerable.Empty<Pago>()).Sum(p => p.Monto);
+            
+            // Incluir pagos a cuenta (FacturaId = null) en el total pagado
+            var totalPagadoEnFacturas = alumno.Facturas
+                .SelectMany(f => f.Pagos ?? Enumerable.Empty<Pago>())
+                .Sum(p => p.Monto);
+            
+            var totalPagado = totalPagadoEnFacturas;
+
+            var saldoPendiente = totalFacturado - totalPagado;
+            var saldoAFavor = saldoPendiente < 0 ? Math.Abs(saldoPendiente) : 0m;
 
             return new EstadoCuentaDto
             {
@@ -102,7 +111,7 @@ namespace Tlaoami.Application.Mappers
                 NombreCompleto = $"{alumno.Nombre} {alumno.Apellido}",
                 TotalFacturado = totalFacturado,
                 TotalPagado = totalPagado,
-                SaldoPendiente = totalFacturado - totalPagado,
+                SaldoPendiente = saldoPendiente > 0 ? saldoPendiente : 0m,
                 FacturasPagadas = facturasPagadas.Select(f => ToFacturaDto(f)).ToList(),
                 FacturasPendientes = facturasPendientes.Select(f => ToFacturaDto(f)).ToList()
             };
