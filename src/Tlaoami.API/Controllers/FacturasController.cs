@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Exceptions;
+using Tlaoami.Application.Services;
 
 namespace Tlaoami.API.Controllers
 {
@@ -12,10 +14,12 @@ namespace Tlaoami.API.Controllers
     public class FacturasController : ControllerBase
     {
         private readonly IFacturaService _facturaService;
+        private readonly IFacturaFiscalService _facturaFiscalService;
 
-        public FacturasController(IFacturaService facturaService)
+        public FacturasController(IFacturaService facturaService, IFacturaFiscalService facturaFiscalService)
         {
             _facturaService = facturaService;
+            _facturaFiscalService = facturaFiscalService;
         }
 
         [HttpPost("{id}/emitir-recibo")]
@@ -144,6 +148,73 @@ namespace Tlaoami.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/timbrar-cfdi")]
+        public async Task<ActionResult<FacturaFiscalDto>> TimbrarCfdi(Guid id, [FromBody] TimbrarCfdiRequest? request)
+        {
+            try
+            {
+                var fiscal = await _facturaFiscalService.TimbrarAsync(id, request);
+                return Ok(fiscal);
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/fiscal")]
+        public async Task<ActionResult<FacturaFiscalDto>> GetFacturaFiscal(Guid id)
+        {
+            var fiscal = await _facturaFiscalService.GetByFacturaIdAsync(id);
+            if (fiscal == null)
+                return NotFound(new { error = "Factura fiscal no encontrada", code = "FACTURA_FISCAL_NO_ENCONTRADA" });
+            return Ok(fiscal);
+        }
+
+        [HttpGet("{id}/fiscal/xml")]
+        public async Task<ActionResult> DescargarXml(Guid id)
+        {
+            try
+            {
+                var (xml, _) = await _facturaFiscalService.DescargarAsync(id);
+                return Ok(new { xmlBase64 = xml });
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
+            }
+        }
+
+        [HttpGet("{id}/fiscal/pdf")]
+        public async Task<ActionResult> DescargarPdf(Guid id)
+        {
+            try
+            {
+                var (_, pdf) = await _facturaFiscalService.DescargarAsync(id);
+                return Ok(new { pdfBase64 = pdf });
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
             }
         }
 

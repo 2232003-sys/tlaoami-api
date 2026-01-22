@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Exceptions;
+using Tlaoami.Application.Services;
 using Tlaoami.Domain;
 
 namespace Tlaoami.API.Controllers
@@ -14,10 +16,12 @@ namespace Tlaoami.API.Controllers
     public class AlumnosController : ControllerBase
     {
         private readonly IAlumnoService _alumnoService;
+        private readonly IReceptorFiscalService _receptorFiscalService;
 
-        public AlumnosController(IAlumnoService alumnoService)
+        public AlumnosController(IAlumnoService alumnoService, IReceptorFiscalService receptorFiscalService)
         {
             _alumnoService = alumnoService;
+            _receptorFiscalService = receptorFiscalService;
         }
 
         [HttpGet]
@@ -79,6 +83,33 @@ namespace Tlaoami.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/receptor-fiscal")]
+        public async Task<ActionResult<ReceptorFiscalDto>> GetReceptorFiscal(Guid id)
+        {
+            var receptor = await _receptorFiscalService.GetByAlumnoIdAsync(id);
+            if (receptor == null)
+                return NotFound(new { error = "Receptor fiscal no encontrado", code = "RECEPTOR_FISCAL_NO_ENCONTRADO" });
+            return Ok(receptor);
+        }
+
+        [HttpPut("{id}/receptor-fiscal")]
+        public async Task<ActionResult<ReceptorFiscalDto>> UpsertReceptorFiscal(Guid id, [FromBody] ReceptorFiscalUpsertDto dto)
+        {
+            try
+            {
+                var receptor = await _receptorFiscalService.UpsertAsync(id, dto);
+                return Ok(receptor);
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
             }
         }
 

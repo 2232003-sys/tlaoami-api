@@ -28,6 +28,8 @@ public class TlaoamiDbContext : DbContext
     public DbSet<AceptacionAvisoPrivacidad> AceptacionesAvisoPrivacidad { get; set; }
     public DbSet<Reinscripcion> Reinscripciones { get; set; }
     public DbSet<Salon> Salones { get; set; }
+    public DbSet<ReceptorFiscal> ReceptoresFiscales { get; set; }
+    public DbSet<FacturaFiscal> FacturasFiscales { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -500,5 +502,30 @@ public class TlaoamiDbContext : DbContext
             .WithMany()
             .HasForeignKey(g => g.DocenteTitularId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // ReceptorFiscal configuration
+        modelBuilder.Entity<ReceptorFiscal>()
+            .HasOne(rf => rf.Alumno)
+            .WithOne(a => a.ReceptorFiscal)
+            .HasForeignKey<ReceptorFiscal>(rf => rf.AlumnoId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ReceptorFiscal>()
+            .HasIndex(rf => rf.Rfc)
+            .IsUnique();
+
+        // FacturaFiscal configuration
+        modelBuilder.Entity<FacturaFiscal>()
+            .HasKey(ff => ff.FacturaId);
+
+        modelBuilder.Entity<FacturaFiscal>()
+            .HasOne(ff => ff.Factura)
+            .WithOne(f => f.FacturaFiscal)
+            .HasForeignKey<FacturaFiscal>(ff => ff.FacturaId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FacturaFiscal>()
+            .HasIndex(ff => ff.CfdiUuid)
+            .IsUnique();
     }
 }

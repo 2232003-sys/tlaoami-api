@@ -86,9 +86,12 @@ namespace Tlaoami.Application.Services
             return new GrupoDto
             {
                 Id = asignacionActiva.Grupo.Id,
+                Codigo = asignacionActiva.Grupo.Codigo,
                 Nombre = asignacionActiva.Grupo.Nombre,
                 Grado = asignacionActiva.Grupo.Grado,
+                Seccion = asignacionActiva.Grupo.Seccion,
                 Turno = asignacionActiva.Grupo.Turno,
+                Activo = asignacionActiva.Grupo.Activo,
                 CicloEscolarId = asignacionActiva.Grupo.CicloEscolarId,
                 CicloNombre = asignacionActiva.Grupo.CicloEscolar?.Nombre
             };

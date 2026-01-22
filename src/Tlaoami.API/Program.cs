@@ -12,6 +12,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Tlaoami.Application.Facturacion;
+using Tlaoami.Application.Services.CfdiProviders;
+using Tlaoami.Application.Configuration;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +43,23 @@ builder.Services.AddScoped<IColegiaturasService, ColegiaturasService>();
 builder.Services.AddScoped<IAvisoPrivacidadService, AvisoPrivacidadService>();
 builder.Services.AddScoped<ISalonService, SalonService>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IReceptorFiscalService, ReceptorFiscalService>();
+builder.Services.AddScoped<IFacturaFiscalService, FacturaFiscalService>();
+builder.Services.AddScoped<ICfdiProvider, DummyCfdiProvider>();
+builder.Services.Configure<EmisorFiscalOptions>(builder.Configuration.GetSection("EmisorFiscal"));
+
+// Facturación provider selection: Dummy | Facturama
+var factProv = builder.Configuration["Facturacion:Provider"] ?? "Dummy";
+if (string.Equals(factProv, "Facturama", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddScoped<IFacturacionProvider, FacturamaClient>();
+}
+else
+{
+    builder.Services.AddScoped<IFacturacionProvider, DummyFacturacionProvider>();
+}
+builder.Services.AddScoped<Tlaoami.Application.Services.FacturacionService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -97,8 +118,16 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var context = services.GetRequiredService<TlaoamiDbContext>();
-    context.Database.Migrate(); // Apply pending migrations
-    await DataSeeder.SeedAsync(context);
+    try
+    {
+        context.Database.Migrate(); // Apply pending migrations
+        await DataSeeder.SeedAsync(context);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️ Seed error (non-blocking): {ex.Message}");
+        // No throwear - permitir que la app siga
+    }
 }
 
 // Configure the HTTP request pipeline.

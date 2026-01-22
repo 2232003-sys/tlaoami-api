@@ -66,6 +66,7 @@ namespace Tlaoami.API.Controllers
                 grupo2A = new Grupo
                 {
                     Id = Guid.NewGuid(),
+                    Codigo = "2A-SETUP",
                     Nombre = "2A",
                     Grado = 2,
                     Turno = "Matutino",
@@ -81,6 +82,7 @@ namespace Tlaoami.API.Controllers
                 grupo2B = new Grupo
                 {
                     Id = Guid.NewGuid(),
+                    Codigo = "2B-SETUP",
                     Nombre = "2B",
                     Grado = 2,
                     Turno = "Vespertino",

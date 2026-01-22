@@ -71,12 +71,12 @@ namespace Tlaoami.Infrastructure
             // === CREATE GRUPOS ===
             var grupos = new List<Grupo>
             {
-                new Grupo { Id = Guid.NewGuid(), Nombre = "1A", Grado = 1, Turno = "Mañana", CicloEscolarId = ciclo2026.Id },
-                new Grupo { Id = Guid.NewGuid(), Nombre = "1B", Grado = 1, Turno = "Mañana", CicloEscolarId = ciclo2026.Id },
-                new Grupo { Id = Guid.NewGuid(), Nombre = "2A", Grado = 2, Turno = "Mañana", CicloEscolarId = ciclo2026.Id },
-                new Grupo { Id = Guid.NewGuid(), Nombre = "2B", Grado = 2, Turno = "Tarde", CicloEscolarId = ciclo2026.Id },
-                new Grupo { Id = Guid.NewGuid(), Nombre = "3A", Grado = 3, Turno = "Mañana", CicloEscolarId = ciclo2026.Id },
-                new Grupo { Id = Guid.NewGuid(), Nombre = "3B", Grado = 3, Turno = "Tarde", CicloEscolarId = ciclo2026.Id },
+                new Grupo { Id = Guid.NewGuid(), Codigo = "1A-2026", Nombre = "1A", Grado = 1, Seccion = "A", Turno = "Mañana", CicloEscolarId = ciclo2026.Id, Activo = true },
+                new Grupo { Id = Guid.NewGuid(), Codigo = "1B-2026", Nombre = "1B", Grado = 1, Seccion = "B", Turno = "Mañana", CicloEscolarId = ciclo2026.Id, Activo = true },
+                new Grupo { Id = Guid.NewGuid(), Codigo = "2A-2026", Nombre = "2A", Grado = 2, Seccion = "A", Turno = "Mañana", CicloEscolarId = ciclo2026.Id, Activo = true },
+                new Grupo { Id = Guid.NewGuid(), Codigo = "2B-2026", Nombre = "2B", Grado = 2, Seccion = "B", Turno = "Tarde", CicloEscolarId = ciclo2026.Id, Activo = true },
+                new Grupo { Id = Guid.NewGuid(), Codigo = "3A-2026", Nombre = "3A", Grado = 3, Seccion = "A", Turno = "Mañana", CicloEscolarId = ciclo2026.Id, Activo = true },
+                new Grupo { Id = Guid.NewGuid(), Codigo = "3B-2026", Nombre = "3B", Grado = 3, Seccion = "B", Turno = "Tarde", CicloEscolarId = ciclo2026.Id, Activo = true },
             };
             context.Grupos.AddRange(grupos);
             await context.SaveChangesAsync();

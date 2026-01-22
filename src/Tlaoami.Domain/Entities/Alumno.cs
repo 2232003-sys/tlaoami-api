@@ -26,6 +26,8 @@ namespace Tlaoami.Domain.Entities
 
         public DateTime FechaInscripcion { get; set; }
 
+        public ReceptorFiscal? ReceptorFiscal { get; set; }
+
         public ICollection<Factura> Facturas { get; set; } = new List<Factura>();
 
         public ICollection<AlumnoGrupo> AsignacionesGrupo { get; set; } = new List<AlumnoGrupo>();

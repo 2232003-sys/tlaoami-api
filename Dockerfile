@@ -7,9 +7,11 @@ COPY src/Tlaoami.API/Tlaoami.API.csproj src/Tlaoami.API/
 COPY src/Tlaoami.Application/Tlaoami.Application.csproj src/Tlaoami.Application/
 COPY src/Tlaoami.Domain/Tlaoami.Domain.csproj src/Tlaoami.Domain/
 COPY src/Tlaoami.Infrastructure/Tlaoami.Infrastructure.csproj src/Tlaoami.Infrastructure/
+COPY tests/Tlaoami.Tests/Tlaoami.Tests.csproj tests/Tlaoami.Tests/
 RUN dotnet restore Tlaoami.sln
 
 COPY src ./src
+COPY tests ./tests
 RUN dotnet publish src/Tlaoami.API/Tlaoami.API.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 # Runtime stage

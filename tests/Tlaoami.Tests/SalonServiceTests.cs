@@ -167,6 +167,7 @@ namespace Tlaoami.Tests
             var grupo = new Grupo
             {
                 Id = Guid.NewGuid(),
+                Codigo = "1A-TEST",
                 Nombre = "1A",
                 Grado = 1,
                 CicloEscolarId = ciclo.Id,

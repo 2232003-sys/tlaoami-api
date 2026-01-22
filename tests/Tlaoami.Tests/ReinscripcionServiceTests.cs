@@ -64,6 +64,7 @@ namespace Tlaoami.Tests
             var grupo = new Grupo
             {
                 Id = Guid.NewGuid(),
+                Codigo = "1A-TEST",
                 Nombre = "1A",
                 Grado = 1,
                 Turno = "Matutino",
@@ -138,6 +139,7 @@ namespace Tlaoami.Tests
             var grupoActual = new Grupo
             {
                 Id = Guid.NewGuid(),
+                Codigo = "1A-TEST",
                 Nombre = "1A",
                 Grado = 1,
                 Turno = "Matutino",
@@ -148,6 +150,7 @@ namespace Tlaoami.Tests
             var grupoDestino = new Grupo
             {
                 Id = Guid.NewGuid(),
+                Codigo = "2A-TEST",
                 Nombre = "2A",
                 Grado = 2,
                 Turno = "Matutino",
@@ -220,6 +223,7 @@ namespace Tlaoami.Tests
             var grupo1 = new Grupo
             {
                 Id = Guid.NewGuid(),
+                Codigo = "1A-TEST",
                 Nombre = "1A",
                 Grado = 1,
                 Turno = "Matutino",
@@ -230,6 +234,7 @@ namespace Tlaoami.Tests
             var grupo2 = new Grupo
             {
                 Id = Guid.NewGuid(),
+                Codigo = "1B-TEST",
                 Nombre = "1B",
                 Grado = 1,
                 Turno = "Vespertino",

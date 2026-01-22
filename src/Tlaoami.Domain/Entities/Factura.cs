@@ -44,6 +44,7 @@ namespace Tlaoami.Domain.Entities
         public string? CancelReason { get; set; }
         public ICollection<Pago> Pagos { get; set; } = new List<Pago>();
         public ICollection<FacturaLinea> Lineas { get; set; } = new List<FacturaLinea>();
+    public FacturaFiscal? FacturaFiscal { get; set; }
 
         /// <summary>
         /// Recalcula totales y estado a partir de líneas (opcionales) y pagos confirmados.

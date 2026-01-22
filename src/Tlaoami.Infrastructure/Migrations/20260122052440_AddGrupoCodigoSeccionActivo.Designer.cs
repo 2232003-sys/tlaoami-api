@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Tlaoami.Infrastructure.Migrations
 {
     [DbContext(typeof(TlaoamiDbContext))]
-    partial class TlaoamiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260122052440_AddGrupoCodigoSeccionActivo")]
+    partial class AddGrupoCodigoSeccionActivo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -336,69 +339,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.ToTable("Facturas");
                 });
 
-            modelBuilder.Entity("Tlaoami.Domain.Entities.FacturaFiscal", b =>
-                {
-                    b.Property<Guid>("FacturaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CfdiPdfBase64")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CfdiUuid")
-                        .HasColumnType("text");
-
-                    b.Property<string>("CfdiXmlBase64")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ErrorTimbrado")
-                        .HasColumnType("text");
-
-                    b.Property<string>("EstadoTimbrado")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("FormaPago")
-                        .HasColumnType("text");
-
-                    b.Property<string>("MetodoPago")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Proveedor")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReceptorCodigoPostalSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReceptorNombreSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReceptorRegimenSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<string>("ReceptorRfcSnapshot")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("TimbradoAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UsoCfdi")
-                        .HasColumnType("text");
-
-                    b.HasKey("FacturaId");
-
-                    b.HasIndex("CfdiUuid")
-                        .IsUnique();
-
-                    b.ToTable("FacturasFiscales");
-                });
-
             modelBuilder.Entity("Tlaoami.Domain.Entities.FacturaLinea", b =>
                 {
                     b.Property<Guid>("Id")
@@ -650,57 +590,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.HasIndex("FacturaId");
 
                     b.ToTable("PaymentIntents");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.ReceptorFiscal", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("AlumnoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CodigoPostalFiscal")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("text");
-
-                    b.Property<string>("NombreFiscal")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RegimenFiscal")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Rfc")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UsoCfdiDefault")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AlumnoId")
-                        .IsUnique();
-
-                    b.HasIndex("Rfc")
-                        .IsUnique();
-
-                    b.ToTable("ReceptoresFiscales");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.ReglaCobroPorCiclo", b =>
@@ -1044,17 +933,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.Navigation("ConceptoCobro");
                 });
 
-            modelBuilder.Entity("Tlaoami.Domain.Entities.FacturaFiscal", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.Factura", "Factura")
-                        .WithOne("FacturaFiscal")
-                        .HasForeignKey("Tlaoami.Domain.Entities.FacturaFiscal", "FacturaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Factura");
-                });
-
             modelBuilder.Entity("Tlaoami.Domain.Entities.FacturaLinea", b =>
                 {
                     b.HasOne("Tlaoami.Domain.Entities.ConceptoCobro", "ConceptoCobro")
@@ -1140,17 +1018,6 @@ namespace Tlaoami.Infrastructure.Migrations
                         .HasForeignKey("FacturaId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.ReceptorFiscal", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
-                        .WithOne("ReceptorFiscal")
-                        .HasForeignKey("Tlaoami.Domain.Entities.ReceptorFiscal", "AlumnoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Alumno");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.ReglaCobroPorCiclo", b =>
@@ -1263,8 +1130,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.Navigation("AsignacionesGrupo");
 
                     b.Navigation("Facturas");
-
-                    b.Navigation("ReceptorFiscal");
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.AvisoPrivacidad", b =>
@@ -1279,8 +1144,6 @@ namespace Tlaoami.Infrastructure.Migrations
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Factura", b =>
                 {
-                    b.Navigation("FacturaFiscal");
-
                     b.Navigation("Lineas");
 
                     b.Navigation("Pagos");
