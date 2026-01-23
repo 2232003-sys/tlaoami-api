@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,10 +15,12 @@ namespace Tlaoami.API.Controllers
     public class GruposController : ControllerBase
     {
         private readonly IGrupoService _grupoService;
+        private readonly TlaoamiDbContext _db;
 
-        public GruposController(IGrupoService grupoService)
+        public GruposController(IGrupoService grupoService, TlaoamiDbContext db)
         {
             _grupoService = grupoService;
+            _db = db;
         }
 
         /// <summary>
@@ -158,6 +161,38 @@ namespace Tlaoami.API.Controllers
             {
                 return BadRequest(new { error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Asignar salón a un grupo
+        /// </summary>
+        [HttpPut("{grupoId}/salon/{salonId}")]
+        public async Task<IActionResult> AsignarSalon(Guid grupoId, Guid salonId)
+        {
+            var grupo = await _db.Grupos.FirstOrDefaultAsync(g => g.Id == grupoId);
+            if (grupo is null) return NotFound(new { error = "Grupo no encontrado.", code = "GRUPO_NO_ENCONTRADO" });
+
+            var salon = await _db.Salones.AsNoTracking().FirstOrDefaultAsync(s => s.Id == salonId);
+            if (salon is null) return NotFound(new { error = "Salón no encontrado.", code = "SALON_NO_ENCONTRADO" });
+            if (!salon.Activo) return BadRequest(new { error = "El salón está inactivo.", code = "SALON_INACTIVO" });
+
+            grupo.SalonId = salonId;
+            await _db.SaveChangesAsync();
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Quitar salón asignado a un grupo
+        /// </summary>
+        [HttpDelete("{grupoId}/salon")]
+        public async Task<IActionResult> QuitarSalon(Guid grupoId)
+        {
+            var grupo = await _db.Grupos.FirstOrDefaultAsync(g => g.Id == grupoId);
+            if (grupo is null) return NotFound(new { error = "Grupo no encontrado.", code = "GRUPO_NO_ENCONTRADO" });
+
+            grupo.SalonId = null;
+            await _db.SaveChangesAsync();
+            return NoContent();
         }
     }
 }

@@ -141,7 +141,7 @@ namespace Tlaoami.Application.Services
             if (dto.Turno != null) grupo.Turno = dto.Turno;
             if (dto.Capacidad.HasValue) grupo.Capacidad = dto.Capacidad;
             if (dto.Activo.HasValue) grupo.Activo = dto.Activo.Value;
-            if (dto.SalonId.HasValue) grupo.SalonId = dto.SalonId;
+            grupo.SalonId = dto.SalonId; // permite setear null
             if (dto.DocenteTitularId.HasValue) grupo.DocenteTitularId = dto.DocenteTitularId;
 
             await _context.SaveChangesAsync();

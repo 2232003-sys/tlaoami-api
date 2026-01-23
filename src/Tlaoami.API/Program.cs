@@ -49,6 +49,9 @@ builder.Services.AddScoped<IFacturaFiscalService, FacturaFiscalService>();
 builder.Services.AddScoped<ICfdiProvider, DummyCfdiProvider>();
 builder.Services.Configure<EmisorFiscalOptions>(builder.Configuration.GetSection("EmisorFiscal"));
 
+// KPI Queries (read-model)
+builder.Services.AddScoped<Tlaoami.API.Kpi.Queries.DashboardFinancieroQueries>();
+
 // Facturación provider selection: Dummy | Facturama
 var factProv = builder.Configuration["Facturacion:Provider"] ?? "Dummy";
 if (string.Equals(factProv, "Facturama", StringComparison.OrdinalIgnoreCase))
@@ -66,7 +69,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFront", builder =>
     {
-        builder.AllowAnyOrigin()
+        builder.WithOrigins("http://localhost:3001")
                .AllowAnyMethod()
                .AllowAnyHeader();
     });
@@ -92,7 +95,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = null; // Solo endpoints con [Authorize] requieren auth
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Tlaoami.Domain.Entities;
+using Tlaoami.Infrastructure.Configurations;
 
 public class TlaoamiDbContext : DbContext
 {
@@ -27,13 +28,16 @@ public class TlaoamiDbContext : DbContext
     public DbSet<AvisoPrivacidad> AvisosPrivacidad { get; set; }
     public DbSet<AceptacionAvisoPrivacidad> AceptacionesAvisoPrivacidad { get; set; }
     public DbSet<Reinscripcion> Reinscripciones { get; set; }
-    public DbSet<Salon> Salones { get; set; }
+    public DbSet<Salon> Salones => Set<Salon>();
     public DbSet<ReceptorFiscal> ReceptoresFiscales { get; set; }
     public DbSet<FacturaFiscal> FacturasFiscales { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Apply entity configurations
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(TlaoamiDbContext).Assembly);
 
         // === GLOBAL DateTime to UTC Conversion ===
         // Configure all DateTime properties to convert to UTC for PostgreSQL
@@ -471,23 +475,6 @@ public class TlaoamiDbContext : DbContext
             .WithMany()
             .HasForeignKey(r => r.GrupoDestinoId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        // Salon configuration
-        modelBuilder.Entity<Salon>(entity =>
-        {
-            entity.HasKey(s => s.Id);
-            
-            entity.HasIndex(s => s.Codigo)
-                .IsUnique();
-            
-            entity.Property(s => s.Codigo)
-                .HasMaxLength(50)
-                .IsRequired();
-            
-            entity.Property(s => s.Nombre)
-                .HasMaxLength(100)
-                .IsRequired();
-        });
 
         // Grupo → Salon relationship
         modelBuilder.Entity<Grupo>()

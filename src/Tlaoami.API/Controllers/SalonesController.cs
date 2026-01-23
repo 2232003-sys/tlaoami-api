@@ -1,80 +1,85 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tlaoami.Application.Dtos;
+using Tlaoami.Application.Exceptions;
 using Tlaoami.Application.Interfaces;
 
-namespace Tlaoami.API.Controllers
+namespace Tlaoami.API.Controllers;
+
+[AllowAnonymous]
+[ApiController]
+[Route("api/v1/[controller]")]
+public class SalonesController : ControllerBase
 {
-    [ApiController]
-    [Route("api/v1/[controller]")]
-    [Authorize]
-    public class SalonesController : ControllerBase
+    private readonly ISalonService _salonService;
+
+    public SalonesController(ISalonService salonService)
     {
-        private readonly ISalonService _salonService;
+        _salonService = salonService;
+    }
 
-        public SalonesController(ISalonService salonService)
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<SalonDto>>> GetAll([FromQuery] bool soloActivos = false)
+    {
+        var activo = soloActivos ? true : (bool?)null;
+        var data = await _salonService.GetAllAsync(activo);
+        return Ok(data);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<SalonDto>> GetById(Guid id)
+    {
+        var salon = await _salonService.GetByIdAsync(id);
+        return salon is null ? NotFound() : Ok(salon);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<SalonDto>> Create([FromBody] SalonCreateDto input)
+    {
+        try
         {
-            _salonService = salonService;
+            var created = await _salonService.CreateAsync(input);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
-
-        /// <summary>
-        /// Obtiene todos los salones (por defecto solo activos)
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<SalonDto>>> GetAll([FromQuery] bool? activo = true)
+        catch (BusinessException ex) when (ex.Code == "SALON_CODIGO_DUPLICADO")
         {
-            var salones = await _salonService.GetAllAsync(activo);
-            return Ok(salones);
+            return Conflict(ex.Message);
         }
+    }
 
-        /// <summary>
-        /// Obtiene un salón por ID
-        /// </summary>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<SalonDto>> GetById(Guid id)
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<SalonDto>> Update(Guid id, [FromBody] SalonUpdateDto input)
+    {
+        try
         {
-            var salon = await _salonService.GetByIdAsync(id);
-
-            if (salon == null)
-                return NotFound(new { code = "SALON_NO_ENCONTRADO", message = "Salón no encontrado" });
-
-            return Ok(salon);
+            var updated = await _salonService.UpdateAsync(id, input);
+            return Ok(updated);
         }
-
-        /// <summary>
-        /// Crea un nuevo salón
-        /// </summary>
-        [HttpPost]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<SalonDto>> Create([FromBody] SalonCreateDto dto)
+        catch (NotFoundException)
         {
-            var salon = await _salonService.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = salon.Id }, salon);
+            return NotFound();
         }
-
-        /// <summary>
-        /// Actualiza un salón existente
-        /// </summary>
-        [HttpPut("{id}")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<ActionResult<SalonDto>> Update(Guid id, [FromBody] SalonUpdateDto dto)
+        catch (BusinessException ex) when (ex.Code == "SALON_CODIGO_DUPLICADO")
         {
-            var salon = await _salonService.UpdateAsync(id, dto);
-            return Ok(salon);
+            return Conflict(ex.Message);
         }
+    }
 
-        /// <summary>
-        /// Elimina un salón (solo si no tiene grupos asignados)
-        /// </summary>
-        [HttpDelete("{id}")]
-        [Authorize(Policy = "AdminOnly")]
-        public async Task<IActionResult> Delete(Guid id)
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> SoftDelete(Guid id)
+    {
+        try
         {
             await _salonService.DeleteAsync(id);
             return NoContent();
+        }
+        catch (NotFoundException)
+        {
+            return NotFound();
+        }
+        catch (BusinessException ex) when (ex.Code == "SALON_EN_USO")
+        {
+            return Conflict(ex.Message);
         }
     }
 }
