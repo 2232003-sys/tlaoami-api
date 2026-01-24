@@ -12,10 +12,12 @@ namespace Tlaoami.Application.Services
     public class AsignacionGrupoService : IAsignacionGrupoService
     {
         private readonly TlaoamiDbContext _context;
+        private readonly IAlumnoService _alumnoService;
 
-        public AsignacionGrupoService(TlaoamiDbContext context)
+        public AsignacionGrupoService(TlaoamiDbContext context, IAlumnoService alumnoService)
         {
             _context = context;
+            _alumnoService = alumnoService;
         }
 
         public async Task<AlumnoGrupoDto> AsignarAlumnoAGrupoAsync(AsignarAlumnoGrupoDto dto)
@@ -31,6 +33,16 @@ namespace Tlaoami.Application.Services
             var grupo = await _context.Grupos.FindAsync(dto.GrupoId);
             if (grupo == null)
                 throw new NotFoundException("Grupo no encontrado", code: "GRUPO_NO_ENCONTRADO");
+
+            // VALIDAR ADEUDO: bloquear cambio de grupo si hay saldo pendiente
+            var estadoCuenta = await _alumnoService.GetEstadoCuentaAsync(dto.AlumnoId);
+            if (estadoCuenta.SaldoPendiente > 0.01m)
+            {
+                throw new BusinessException(
+                    code: "CAMBIO_GRUPO_BLOQUEADO_ADEUDO",
+                    message: $"El alumno tiene un adeudo pendiente de ${estadoCuenta.SaldoPendiente:N2}. No se puede cambiar de grupo."
+                );
+            }
 
             // Cerrar asignación activa anterior si existe
             var asignacionActiva = await _context.AsignacionesGrupo

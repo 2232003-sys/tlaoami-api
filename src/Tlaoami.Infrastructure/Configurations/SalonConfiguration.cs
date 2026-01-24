@@ -21,6 +21,7 @@ public class SalonConfiguration : IEntityTypeConfiguration<Salon>
             .HasMaxLength(120);
 
         builder.Property(x => x.Activo)
+            .IsRequired()
             .HasDefaultValue(true);
 
         builder.HasIndex(x => x.Codigo)

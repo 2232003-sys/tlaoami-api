@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Exceptions;
 
 namespace Tlaoami.API.Controllers
 {
@@ -25,6 +26,18 @@ namespace Tlaoami.API.Controllers
             {
                 var asignacion = await _asignacionService.AsignarAlumnoAGrupoAsync(dto);
                 return CreatedAtAction(nameof(AsignarAlumnoAGrupo), asignacion);
+            }
+            catch (BusinessException ex) when (ex.Code == "CAMBIO_GRUPO_BLOQUEADO_ADEUDO")
+            {
+                return Conflict(new { message = ex.Message, code = ex.Code });
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
             }
             catch (Exception ex)
             {

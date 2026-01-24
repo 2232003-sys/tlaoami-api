@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Tlaoami.Application.Dtos;
@@ -23,6 +25,118 @@ namespace Tlaoami.Application.Services
             _context = context;
             _asignacionService = asignacionService;
             _alumnoService = alumnoService;
+        }
+
+        public async Task<IEnumerable<ReinscripcionPreviewItemDto>> PreviewAsync(Guid cicloOrigenId, Guid cicloDestinoId)
+        {
+            var alumnos = await _context.AsignacionesGrupo
+                .Where(ag => ag.Grupo.CicloEscolarId == cicloOrigenId)
+                .Select(ag => new
+                {
+                    ag.AlumnoId,
+                    AlumnoNombre = (ag.Alumno.Nombre ?? string.Empty) + " " + (ag.Alumno.Apellido ?? string.Empty),
+                    ag.GrupoId,
+                    GrupoCodigo = ag.Grupo.Codigo
+                })
+                .Distinct()
+                .ToListAsync();
+
+            var yaReinscritos = (await _context.Reinscripciones
+                .Where(r => r.CicloDestinoId == cicloDestinoId)
+                .Select(r => r.AlumnoId)
+                .ToListAsync())
+                .ToHashSet();
+
+            var result = new List<ReinscripcionPreviewItemDto>();
+
+            foreach (var a in alumnos)
+            {
+                var estado = await _alumnoService.GetEstadoCuentaAsync(a.AlumnoId);
+                if (estado == null)
+                    continue;
+
+                var bloqueado = estado.SaldoPendiente > 0.01m;
+
+                result.Add(new ReinscripcionPreviewItemDto
+                {
+                    AlumnoId = a.AlumnoId,
+                    NombreAlumno = a.AlumnoNombre.Trim(),
+                    GrupoOrigenId = a.GrupoId,
+                    GrupoOrigenCodigo = a.GrupoCodigo,
+                    SaldoPendiente = estado.SaldoPendiente,
+                    Bloqueado = bloqueado,
+                    MotivoBloqueo = bloqueado ? "ADEUDO" : null,
+                    YaReinscrito = yaReinscritos.Contains(a.AlumnoId)
+                });
+            }
+
+            return result;
+        }
+
+        public async Task EjecutarAsync(ReinscripcionEjecutarDto dto)
+        {
+            using var tx = await _context.Database.BeginTransactionAsync();
+
+            foreach (var item in dto.Items)
+            {
+                // Idempotencia básica: evitar duplicados por índice único
+                var yaExiste = await _context.Reinscripciones.AnyAsync(r => r.AlumnoId == item.AlumnoId && r.CicloDestinoId == dto.CicloDestinoId);
+                if (yaExiste)
+                    continue;
+
+                var estado = await _alumnoService.GetEstadoCuentaAsync(item.AlumnoId);
+                if (estado == null)
+                    throw new NotFoundException("ESTADO_CUENTA_NO_DISPONIBLE");
+
+                // Captura de grupo/ciclo origen si existe
+                var asignacionOrigen = await _context.AsignacionesGrupo
+                    .Include(ag => ag.Grupo)
+                    .FirstOrDefaultAsync(ag => ag.AlumnoId == item.AlumnoId && ag.Grupo != null && ag.Grupo.CicloEscolarId == dto.CicloOrigenId);
+
+                if (estado.SaldoPendiente > 0.01m)
+                {
+                    _context.Reinscripciones.Add(new Reinscripcion
+                    {
+                        Id = Guid.NewGuid(),
+                        AlumnoId = item.AlumnoId,
+                        CicloOrigenId = asignacionOrigen?.Grupo?.CicloEscolarId ?? dto.CicloOrigenId,
+                        GrupoOrigenId = asignacionOrigen?.GrupoId,
+                        CicloDestinoId = dto.CicloDestinoId,
+                        GrupoDestinoId = item.GrupoDestinoId,
+                        Estado = "BLOQUEADA_ADEUDO",
+                        MotivoBloqueo = "ADEUDO",
+                        SaldoAlMomento = estado.SaldoPendiente,
+                        CreatedAtUtc = DateTime.UtcNow
+                    });
+                    continue;
+                }
+
+                _context.AsignacionesGrupo.Add(new AlumnoGrupo
+                {
+                    Id = Guid.NewGuid(),
+                    AlumnoId = item.AlumnoId,
+                    GrupoId = item.GrupoDestinoId,
+                    FechaInicio = DateTime.UtcNow,
+                    Activo = true
+                });
+
+                _context.Reinscripciones.Add(new Reinscripcion
+                {
+                    Id = Guid.NewGuid(),
+                    AlumnoId = item.AlumnoId,
+                    CicloOrigenId = asignacionOrigen?.Grupo?.CicloEscolarId ?? dto.CicloOrigenId,
+                    GrupoOrigenId = asignacionOrigen?.GrupoId,
+                    CicloDestinoId = dto.CicloDestinoId,
+                    GrupoDestinoId = item.GrupoDestinoId,
+                    Estado = "COMPLETADA",
+                    SaldoAlMomento = estado.SaldoPendiente,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    CompletedAtUtc = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            await tx.CommitAsync();
         }
 
         public async Task<ReinscripcionDto> CrearReinscripcionAsync(ReinscripcionCreateDto dto, Guid? usuarioId = null)
@@ -55,28 +169,10 @@ namespace Tlaoami.Application.Services
             // 5. VALIDAR ADEUDO: si saldo > 0.01 => bloquear
             if (saldoActual > 0.01m)
             {
-                // Registrar intento de reinscripción bloqueada
-                var reinscripcionBloqueada = new Reinscripcion
-                {
-                    Id = Guid.NewGuid(),
-                    AlumnoId = dto.AlumnoId,
-                    CicloDestinoId = dto.CicloDestinoId,
-                    GrupoDestinoId = dto.GrupoDestinoId,
-                    Estado = "Bloqueada",
-                    MotivoBloqueo = "ADEUDO",
-                    SaldoAlMomento = saldoActual,
-                    CreatedAtUtc = DateTime.UtcNow,
-                    CompletedAtUtc = DateTime.UtcNow,
-                    CreatedByUserId = usuarioId
-                };
-
-                _context.Reinscripciones.Add(reinscripcionBloqueada);
-                await _context.SaveChangesAsync();
-
-                // Lanzar excepción
                 throw new BusinessException(
-                    $"Reinscripción bloqueada por adeudo. Saldo pendiente: ${saldoActual:F2}",
-                    code: "REINSCRIPCION_BLOQUEADA_ADEUDO");
+                    code: "REINSCRIPCION_BLOQUEADA_ADEUDO",
+                    message: $"Alumno con adeudo pendiente: ${saldoActual:C}"
+                );
             }
 
             // 6. Verificar que alumno NO esté ya inscrito en el ciclo destino (evitar duplicado)

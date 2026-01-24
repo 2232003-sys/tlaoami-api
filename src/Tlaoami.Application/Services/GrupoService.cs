@@ -95,6 +95,9 @@ namespace Tlaoami.Application.Services
             };
 
             _context.Grupos.Add(grupo);
+
+            // Regla de capacidad (normalmente alumnos = 0)
+            await ValidarCapacidadSalonAsync(grupo.Id, grupo.SalonId);
             await _context.SaveChangesAsync();
 
             // Reload to get related data
@@ -141,9 +144,14 @@ namespace Tlaoami.Application.Services
             if (dto.Turno != null) grupo.Turno = dto.Turno;
             if (dto.Capacidad.HasValue) grupo.Capacidad = dto.Capacidad;
             if (dto.Activo.HasValue) grupo.Activo = dto.Activo.Value;
-            grupo.SalonId = dto.SalonId; // permite setear null
+            if (dto.SalonId.HasValue)
+            {
+                grupo.SalonId = dto.SalonId;
+            }
             if (dto.DocenteTitularId.HasValue) grupo.DocenteTitularId = dto.DocenteTitularId;
 
+            // Regla de capacidad
+            await ValidarCapacidadSalonAsync(grupo.Id, grupo.SalonId);
             await _context.SaveChangesAsync();
 
             // Reload to get related data
@@ -245,10 +253,42 @@ namespace Tlaoami.Application.Services
                 CicloNombre = grupo.CicloEscolar?.Nombre,
                 SalonId = grupo.SalonId,
                 SalonCodigo = grupo.Salon?.Codigo,
+                SalonNombre = grupo.Salon?.Nombre,
                 DocenteTitularId = grupo.DocenteTitularId,
                 DocenteTitularNombre = grupo.DocenteTitular?.Username,
                 AlumnosInscritos = grupo.Alumnos?.Count(ag => ag.FechaFin == null || ag.FechaFin > DateTime.UtcNow) ?? 0
             };
+        }
+
+        private async Task ValidarCapacidadSalonAsync(Guid grupoId, Guid? salonId)
+        {
+            if (!salonId.HasValue)
+                return;
+
+            var salon = await _context.Salones
+                .Where(s => s.Id == salonId.Value && s.Activo)
+                .Select(s => new
+                {
+                    s.Id,
+                    s.Codigo,
+                    s.Capacidad
+                })
+                .FirstOrDefaultAsync();
+
+            if (salon is null)
+                throw new NotFoundException("SALON_NO_ENCONTRADO");
+
+            var alumnosAsignados = await _context.AsignacionesGrupo
+                .Where(x => x.GrupoId == grupoId)
+                .CountAsync();
+
+            if (salon.Capacidad.HasValue && alumnosAsignados > salon.Capacidad.Value)
+            {
+                throw new BusinessException(
+                    code: "SALON_CAPACIDAD_INSUFICIENTE",
+                    message: $"El salón {salon.Codigo} tiene capacidad {salon.Capacidad} y el grupo ya tiene {alumnosAsignados} alumno(s)."
+                );
+            }
         }
     }
 }

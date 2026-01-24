@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Tlaoami.Application.Dtos;
+using Tlaoami.Application.Exceptions;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Domain;
 
@@ -19,6 +21,33 @@ namespace Tlaoami.API.Controllers
             _service = service;
         }
 
+        [HttpGet("preview")]
+        [Authorize(Roles = Roles.AdminAndAdministrativo)]
+        public async Task<IActionResult> Preview([FromQuery] Guid cicloOrigenId, [FromQuery] Guid cicloDestinoId)
+        {
+            var resultado = await _service.PreviewAsync(cicloOrigenId, cicloDestinoId);
+            return Ok(resultado);
+        }
+
+        [HttpPost("ejecutar")]
+        [Authorize(Roles = Roles.AdminAndAdministrativo)]
+        public async Task<IActionResult> Ejecutar([FromBody] ReinscripcionEjecutarDto dto)
+        {
+            try
+            {
+                await _service.EjecutarAsync(dto);
+                return Ok();
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
+            }
+        }
+
         /// <summary>
         /// Crea una solicitud de reinscripción de alumno a nuevo ciclo/grupo.
         /// Valida adeudo: si saldo > 0.01 => 409 REINSCRIPCION_BLOQUEADA_ADEUDO.
@@ -28,9 +57,24 @@ namespace Tlaoami.API.Controllers
         [Authorize(Roles = Roles.AdminAndAdministrativo)]
         public async Task<ActionResult<ReinscripcionDto>> CrearReinscripcion([FromBody] ReinscripcionCreateDto dto)
         {
-            var usuarioId = ObtenerUsuarioIdDelJwt();
-            var resultado = await _service.CrearReinscripcionAsync(dto, usuarioId);
-            return CreatedAtAction(nameof(GetReinscripcion), new { id = resultado.Id }, resultado);
+            try
+            {
+                var usuarioId = ObtenerUsuarioIdDelJwt();
+                var resultado = await _service.CrearReinscripcionAsync(dto, usuarioId);
+                return CreatedAtAction(nameof(GetReinscripcion), new { id = resultado.Id }, resultado);
+            }
+            catch (BusinessException ex) when (ex.Code == "REINSCRIPCION_BLOQUEADA_ADEUDO")
+            {
+                return Conflict(new { message = ex.Message, code = ex.Code });
+            }
+            catch (BusinessException ex)
+            {
+                return Conflict(new { error = ex.Message, code = ex.Code });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { error = ex.Message, code = ex.Code });
+            }
         }
 
         /// <summary>

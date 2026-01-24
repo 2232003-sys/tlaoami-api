@@ -60,15 +60,11 @@ namespace Tlaoami.API.Controllers
             return Ok(alumno);
         }
 
+        [AllowAnonymous]
         [HttpGet("{id}/estado-cuenta")]
-        [Authorize(Roles = Roles.AllRoles)]
         public async Task<ActionResult<EstadoCuentaDto>> GetEstadoCuenta(Guid id)
         {
             var estadoCuenta = await _alumnoService.GetEstadoCuentaAsync(id);
-            if (estadoCuenta == null)
-            {
-                return NotFound();
-            }
             return Ok(estadoCuenta);
         }
 

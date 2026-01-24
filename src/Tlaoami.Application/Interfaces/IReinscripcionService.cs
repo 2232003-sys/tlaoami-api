@@ -17,8 +17,16 @@ namespace Tlaoami.Application.Interfaces
         /// </summary>
         Task<ReinscripcionDto> CrearReinscripcionAsync(ReinscripcionCreateDto dto, Guid? usuarioId = null);
 
+        /// <summary>        /// Vista previa masiva de reinscripción por ciclo origen/destino.
+        /// </summary>
+        Task<IEnumerable<ReinscripcionPreviewItemDto>> PreviewAsync(Guid cicloOrigenId, Guid cicloDestinoId);
+
         /// <summary>
-        /// Obtiene detalles de una reinscripción por ID
+        /// Ejecuta reinscripción masiva para los items entregados.
+        /// </summary>
+        Task EjecutarAsync(ReinscripcionEjecutarDto dto);
+
+        /// <summary>        /// Obtiene detalles de una reinscripción por ID
         /// </summary>
         Task<ReinscripcionDto?> GetReinscripcionAsync(Guid reinscripcionId);
 

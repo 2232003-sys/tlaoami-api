@@ -66,6 +66,10 @@ namespace Tlaoami.API.Controllers
                 var grupo = await _grupoService.CreateGrupoAsync(dto);
                 return CreatedAtAction(nameof(GetGrupo), new { id = grupo.Id }, grupo);
             }
+            catch (BusinessException ex) when (ex.Code == "SALON_CAPACIDAD_INSUFICIENTE")
+            {
+                return Conflict(ex.Message);
+            }
             catch (BusinessException ex)
             {
                 return Conflict(new { error = ex.Message, code = ex.Code });
@@ -90,6 +94,10 @@ namespace Tlaoami.API.Controllers
             {
                 var grupo = await _grupoService.UpdateGrupoAsync(id, dto);
                 return Ok(grupo);
+            }
+            catch (BusinessException ex) when (ex.Code == "SALON_CAPACIDAD_INSUFICIENTE")
+            {
+                return Conflict(ex.Message);
             }
             catch (BusinessException ex)
             {

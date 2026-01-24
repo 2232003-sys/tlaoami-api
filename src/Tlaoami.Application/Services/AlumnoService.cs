@@ -24,8 +24,38 @@ namespace Tlaoami.Application.Services
         {
             var alumnos = await _context.Alumnos
                 .Where(a => a.Activo)
+                .Include(a => a.AsignacionesGrupo)
+                    .ThenInclude(ag => ag.Grupo)
+                    .ThenInclude(g => g!.CicloEscolar)
+                .Include(a => a.Facturas)
+                    .ThenInclude(f => f.Pagos)
                 .ToListAsync();
-            return alumnos.Select(MappingFunctions.ToAlumnoDto);
+
+            return alumnos.Select(alumno =>
+            {
+                var dto = MappingFunctions.ToAlumnoDto(alumno);
+
+                // Agregar grupo actual
+                var asignacionActiva = alumno.AsignacionesGrupo
+                    ?.FirstOrDefault(ag => ag.Activo && ag.FechaFin == null);
+
+                if (asignacionActiva?.Grupo != null)
+                {
+                    dto.GrupoId = asignacionActiva.Grupo.Id;
+                    dto.GrupoNombre = asignacionActiva.Grupo.Nombre;
+                    dto.CicloId = asignacionActiva.Grupo.CicloEscolarId;
+                    dto.CicloNombre = asignacionActiva.Grupo.CicloEscolar?.Nombre;
+                }
+
+                // Calcular saldo pendiente
+                var totalFacturado = alumno.Facturas?.Sum(f => f.Monto) ?? 0;
+                var totalPagado = alumno.Facturas?
+                    .SelectMany(f => f.Pagos ?? Enumerable.Empty<Pago>())
+                    .Sum(p => p.Monto) ?? 0;
+                dto.SaldoPendiente = totalFacturado - totalPagado;
+
+                return dto;
+            });
         }
 
         public async Task<AlumnoDto?> GetAlumnoByIdAsync(Guid id)

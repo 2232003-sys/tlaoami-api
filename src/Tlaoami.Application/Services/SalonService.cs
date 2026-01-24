@@ -34,10 +34,10 @@ namespace Tlaoami.Application.Services
             var salon = new Salon
             {
                 Id = Guid.NewGuid(),
-                Codigo = dto.Codigo,
-                Nombre = dto.Nombre,
+                Codigo = dto.Codigo.Trim(),
+                Nombre = dto.Nombre.Trim(),
                 Capacidad = dto.Capacidad,
-                Activo = true,
+                Activo = true,              // 👈 CLAVE: forzar explícitamente
                 CreatedAt = DateTime.UtcNow
             };
 

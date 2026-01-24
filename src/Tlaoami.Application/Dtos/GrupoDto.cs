@@ -16,6 +16,7 @@ namespace Tlaoami.Application.Dtos
         public string? CicloNombre { get; set; }
         public Guid? SalonId { get; set; }
         public string? SalonCodigo { get; set; }
+        public string? SalonNombre { get; set; }
         public Guid? DocenteTitularId { get; set; }
         public string? DocenteTitularNombre { get; set; }
         public int AlumnosInscritos { get; set; }

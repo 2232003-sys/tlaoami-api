@@ -29,7 +29,7 @@ namespace Tlaoami.Tests
 
             _context = new TlaoamiDbContext(options);
             _alumnoService = new AlumnoService(_context);
-            _asignacionService = new AsignacionGrupoService(_context);
+            _asignacionService = new AsignacionGrupoService(_context, _alumnoService);
             
             _reinscripcionService = new ReinscripcionService(
                 _context, 

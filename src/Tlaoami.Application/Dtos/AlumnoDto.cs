@@ -14,6 +14,13 @@ namespace Tlaoami.Application.Dtos
         public bool Activo { get; set; }
         public DateTime FechaInscripcion { get; set; }
         public GrupoDto? GrupoActual { get; set; }
+        
+        // Extended properties for frontend
+        public Guid? GrupoId { get; set; }
+        public string? GrupoNombre { get; set; }
+        public Guid? CicloId { get; set; }
+        public string? CicloNombre { get; set; }
+        public decimal? SaldoPendiente { get; set; }
     }
 
     public class AlumnoCreateDto
