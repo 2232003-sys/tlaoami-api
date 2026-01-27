@@ -1,0 +1,93 @@
+using Microsoft.EntityFrameworkCore;
+using Tlaoami.Application.Dtos.ConciliacionMvp;
+using Tlaoami.Application.Interfaces;
+using Tlaoami.Domain.Constants;
+using Tlaoami.Domain.Entities;
+using Tlaoami.Infrastructure.Persistence;
+
+namespace Tlaoami.Application.Services;
+
+public class PagosReportadosService : IPagosReportadosService
+{
+    private readonly AppDbContext _db;
+
+    public PagosReportadosService(AppDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<PagoReportadoDto> CrearAsync(PagoReportadoCreateDto dto)
+    {
+        var pago = new PagoReportado
+        {
+            EscuelaId = dto.EscuelaId,
+            AlumnoId = dto.AlumnoId,
+            Monto = dto.Monto,
+            FechaPago = dto.FechaPago,
+            Referencia = dto.Referencia,
+            Estatus = EstatusPagoReportado.Reportado,
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        _db.PagosReportados.Add(pago);
+        await _db.SaveChangesAsync();
+
+        return new PagoReportadoDto
+        {
+            Id = pago.Id,
+            EscuelaId = pago.EscuelaId,
+            AlumnoId = pago.AlumnoId,
+            Monto = pago.Monto,
+            FechaPago = pago.FechaPago,
+            Referencia = pago.Referencia,
+            Estatus = pago.Estatus
+        };
+    }
+
+    public async Task<PagoReportadoDto?> ObtenerPorIdAsync(Guid id)
+    {
+        return await _db.PagosReportados
+            .Where(p => p.Id == id)
+            .Select(p => new PagoReportadoDto
+            {
+                Id = p.Id,
+                EscuelaId = p.EscuelaId,
+                AlumnoId = p.AlumnoId,
+                Monto = p.Monto,
+                FechaPago = p.FechaPago,
+                Referencia = p.Referencia,
+                Estatus = p.Estatus
+            })
+            .FirstOrDefaultAsync();
+    }
+
+    public async Task<IEnumerable<PagoReportadoDto>> ObtenerPorEscuelaAsync(Guid escuelaId)
+    {
+        return await _db.PagosReportados
+            .Where(p => p.EscuelaId == escuelaId)
+            .OrderByDescending(p => p.FechaPago)
+            .Select(p => new PagoReportadoDto
+            {
+                Id = p.Id,
+                EscuelaId = p.EscuelaId,
+                AlumnoId = p.AlumnoId,
+                Monto = p.Monto,
+                FechaPago = p.FechaPago,
+                Referencia = p.Referencia,
+                Estatus = p.Estatus
+            })
+            .ToListAsync();
+    }
+
+    public async Task MarcarComoConciliadoAsync(Guid pagoReportadoId)
+    {
+        var pago = await _db.PagosReportados
+            .FirstOrDefaultAsync(p => p.Id == pagoReportadoId);
+
+        if (pago == null)
+            throw new InvalidOperationException("PagoReportado no encontrado");
+
+        pago.Estatus = EstatusPagoReportado.Conciliado;
+        await _db.SaveChangesAsync();
+    }
+}

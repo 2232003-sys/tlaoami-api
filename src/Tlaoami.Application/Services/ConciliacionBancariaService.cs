@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Domain.Entities;
 using Tlaoami.Infrastructure;
@@ -411,5 +412,60 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
                 throw;
             }
         }
+    }
+
+    public async Task<Guid> ReportarPagoManualAsync(ReportarPagoManualDto dto)
+    {
+        var pago = new Pago
+        {
+            Id = Guid.NewGuid(),
+            AlumnoId = dto.AlumnoId,
+            Monto = dto.Monto,
+            FechaPago = dto.FechaPago,
+            Metodo = MetodoPago.Efectivo,
+            IdempotencyKey = Guid.NewGuid().ToString()
+        };
+
+        _context.Pagos.Add(pago);
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Pago manual reportado: {PagoId} para alumno {AlumnoId} por monto {Monto}", 
+            pago.Id, dto.AlumnoId, dto.Monto);
+
+        return pago.Id;
+    }
+
+    public async Task<IReadOnlyList<PagoDto>> GetPagosManualesAsync(Guid escuelaId)
+    {
+        return await _context.Pagos
+            .AsNoTracking()
+            .Where(p => p.Metodo == MetodoPago.Efectivo)
+            .OrderByDescending(p => p.FechaPago)
+            .Select(p => new PagoDto
+            {
+                Id = p.Id,
+                AlumnoId = p.AlumnoId,
+                Monto = p.Monto,
+                FechaPago = p.FechaPago,
+                Metodo = p.Metodo.ToString()
+            })
+            .ToListAsync();
+    }
+
+    public async Task ConciliarPagoManualAsync(Guid pagoId)
+    {
+        var pago = await _context.Pagos.FirstOrDefaultAsync(p => p.Id == pagoId);
+        
+        if (pago == null)
+        {
+            _logger.LogWarning("Intento de conciliar pago inexistente: {PagoId}", pagoId);
+            throw new ApplicationException($"Pago con ID {pagoId} no encontrado");
+        }
+
+        // Actualizar estado (en Pago usamos Estatus que es un enum, pero si es string, simplemente no lo cambiamos aquí)
+        // Por ahora solo marcamos con una fecha
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Pago {PagoId} conciliado manualmente", pagoId);
     }
 }

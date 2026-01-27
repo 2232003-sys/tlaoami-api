@@ -52,6 +52,7 @@ builder.Services.AddScoped<IReceptorFiscalService, ReceptorFiscalService>();
 builder.Services.AddScoped<IFacturaFiscalService, FacturaFiscalService>();
 builder.Services.AddScoped<ICfdiProvider, DummyCfdiProvider>();
 builder.Services.Configure<EmisorFiscalOptions>(builder.Configuration.GetSection("EmisorFiscal"));
+// builder.Services.AddScoped<IPagosReportadosService, PagosReportadosService>();
 
 // KPI Queries (read-model)
 builder.Services.AddScoped<Tlaoami.API.Kpi.Queries.DashboardFinancieroQueries>();

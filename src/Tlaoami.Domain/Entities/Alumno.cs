@@ -31,5 +31,9 @@ namespace Tlaoami.Domain.Entities
         public ICollection<Factura> Facturas { get; set; } = new List<Factura>();
 
         public ICollection<AlumnoGrupo> AsignacionesGrupo { get; set; } = new List<AlumnoGrupo>();
+        public ICollection<AlumnoAsignacion> AsignacionesCobro { get; set; } = new List<AlumnoAsignacion>();
+        public ICollection<PagoReportado> PagosReportados { get; set; } = new List<PagoReportado>();
+        public ICollection<ConciliacionMatch> ConciliacionMatches { get; set; } = new List<ConciliacionMatch>();
+        public ICollection<OrdenVenta> OrdenesVenta { get; set; } = new List<OrdenVenta>();
     }
 }

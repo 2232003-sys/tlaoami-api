@@ -1,3 +1,5 @@
+using Tlaoami.Application.Dtos;
+
 namespace Tlaoami.Application.Interfaces;
 
 public interface IConciliacionBancariaService
@@ -13,4 +15,10 @@ public interface IConciliacionBancariaService
         bool aplicarACuenta = false);
 
     Task RevertirConciliacionAsync(Guid movimientoBancarioId);
+
+    Task<Guid> ReportarPagoManualAsync(ReportarPagoManualDto dto);
+
+    Task<IReadOnlyList<PagoDto>> GetPagosManualesAsync(Guid escuelaId);
+
+    Task ConciliarPagoManualAsync(Guid pagoId);
 }

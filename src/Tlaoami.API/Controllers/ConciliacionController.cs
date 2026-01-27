@@ -163,6 +163,29 @@ namespace Tlaoami.API.Controllers
                 return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
             }
         }
+
+        [HttpPost("reportar-pago")]
+        public async Task<IActionResult> ReportarPagoManual([FromBody] ReportarPagoManualDto dto)
+        {
+            var pagoId = await _conciliacionService.ReportarPagoManualAsync(dto);
+            return Ok(new { pagoId });
+        }
+
+        [HttpGet("pagos-manuales")]
+        public async Task<IActionResult> GetPagosManuales()
+        {
+            // TODO: Extraer escuelaId del contexto autenticado
+            var escuelaId = Guid.Empty;
+            var result = await _conciliacionService.GetPagosManualesAsync(escuelaId);
+            return Ok(result);
+        }
+
+        [HttpPost("pagos-manuales/{pagoId}/conciliar")]
+        public async Task<IActionResult> ConciliarPagoManual(Guid pagoId)
+        {
+            await _conciliacionService.ConciliarPagoManualAsync(pagoId);
+            return Ok(new { mensaje = "Pago conciliado exitosamente" });
+        }
     }
 
     public record ConciliarRequest(

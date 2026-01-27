@@ -22,6 +22,10 @@ public class TlaoamiDbContext : DbContext
     public DbSet<PaymentIntent> PaymentIntents { get; set; }
     public DbSet<MovimientoBancario> MovimientosBancarios { get; set; }
     public DbSet<MovimientoConciliacion> MovimientosConciliacion { get; set; }
+    public DbSet<CuentaBancaria> CuentasBancarias { get; set; }
+    public DbSet<PagoReportado> PagosReportados { get; set; }
+    public DbSet<ImportBancarioBatch> ImportBatches { get; set; }
+    public DbSet<ConciliacionMatch> ConciliacionMatches { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<ConceptoCobro> ConceptosCobro { get; set; }
     public DbSet<ReglaCobroPorCiclo> ReglasCobro { get; set; }
@@ -229,41 +233,15 @@ public class TlaoamiDbContext : DbContext
             .WithMany()
             .HasForeignKey(pi => pi.FacturaId);
 
-        // MovimientoBancario configuration
+        // MovimientoBancario configuration (pre-conciliación Afrime)
         modelBuilder.Entity<MovimientoBancario>()
             .Property(mb => mb.Tipo)
-            .HasConversion<string>();
+            .HasConversion<int>();
 
         modelBuilder.Entity<MovimientoBancario>()
-            .Property(mb => mb.Estado)
-            .HasConversion<string>();
+            .Property(mb => mb.Estatus)
+            .HasConversion<int>();
 
-        modelBuilder.Entity<MovimientoBancario>()
-            .HasIndex(mb => mb.HashMovimiento)
-            .IsUnique();
-
-        // MovimientoConciliacion configuration
-        modelBuilder.Entity<MovimientoConciliacion>()
-            .HasOne(mc => mc.MovimientoBancario)
-            .WithMany()
-            .HasForeignKey(mc => mc.MovimientoBancarioId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MovimientoConciliacion>()
-            .HasIndex(mc => mc.MovimientoBancarioId)
-            .IsUnique();
-
-        modelBuilder.Entity<MovimientoConciliacion>()
-            .HasOne(mc => mc.Alumno)
-            .WithMany()
-            .HasForeignKey(mc => mc.AlumnoId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<MovimientoConciliacion>()
-            .HasOne(mc => mc.Factura)
-            .WithMany()
-            .HasForeignKey(mc => mc.FacturaId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         // User configuration
         modelBuilder.Entity<User>()

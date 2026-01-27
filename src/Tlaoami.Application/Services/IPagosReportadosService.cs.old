@@ -1,0 +1,11 @@
+using Tlaoami.Application.Dtos.ConciliacionMvp;
+
+namespace Tlaoami.Application.Interfaces;
+
+public interface IPagosReportadosService
+{
+    Task<PagoReportadoDto> CrearAsync(PagoReportadoCreateDto dto);
+    Task<PagoReportadoDto?> ObtenerPorIdAsync(Guid id);
+    Task<IEnumerable<PagoReportadoDto>> ObtenerPorEscuelaAsync(Guid escuelaId);
+    Task MarcarComoConciliadoAsync(Guid pagoReportadoId);
+}
