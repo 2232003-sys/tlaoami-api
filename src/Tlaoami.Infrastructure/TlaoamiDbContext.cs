@@ -13,6 +13,9 @@ public class TlaoamiDbContext : DbContext
     public DbSet<CicloEscolar> CiclosEscolares { get; set; }
     public DbSet<Grupo> Grupos { get; set; }
     public DbSet<AlumnoGrupo> AsignacionesGrupo { get; set; }
+    public DbSet<AlumnoAsignacion> AlumnoAsignaciones { get; set; }
+    public DbSet<OrdenVenta> OrdenesVenta { get; set; }
+    public DbSet<OrdenVentaLinea> OrdenesVentaLineas { get; set; }
     public DbSet<Factura> Facturas { get; set; }
     public DbSet<FacturaLinea> FacturaLineas { get; set; }
     public DbSet<Pago> Pagos { get; set; }
@@ -31,6 +34,7 @@ public class TlaoamiDbContext : DbContext
     public DbSet<Salon> Salones => Set<Salon>();
     public DbSet<ReceptorFiscal> ReceptoresFiscales { get; set; }
     public DbSet<FacturaFiscal> FacturasFiscales { get; set; }
+    public DbSet<EscuelaSettings> EscuelaSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +71,21 @@ public class TlaoamiDbContext : DbContext
         modelBuilder.Entity<Alumno>()
             .HasIndex(a => a.Matricula)
             .IsUnique();
+
+        // EscuelaSettings configuration (unique per EscuelaId)
+        modelBuilder.Entity<EscuelaSettings>()
+            .HasIndex(s => s.EscuelaId)
+            .IsUnique();
+
+        modelBuilder.Entity<EscuelaSettings>()
+            .Property(s => s.ZonaHoraria)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        modelBuilder.Entity<EscuelaSettings>()
+            .Property(s => s.Moneda)
+            .HasMaxLength(10)
+            .IsRequired();
 
         modelBuilder.Entity<Alumno>()
             .HasIndex(a => a.Email)

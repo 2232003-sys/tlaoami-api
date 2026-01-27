@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -10,9 +11,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Tlaoami.Infrastructure.Migrations
 {
     [DbContext(typeof(TlaoamiDbContext))]
-    partial class TlaoamiDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260127000405_AddAlumnoAsignaciones")]
+    partial class AddAlumnoAsignaciones
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -399,12 +402,6 @@ namespace Tlaoami.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("OrigenId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int?>("OrigenTipo")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Periodo")
                         .HasMaxLength(7)
                         .HasColumnType("character varying(7)");
@@ -656,88 +653,6 @@ namespace Tlaoami.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("MovimientosConciliacion");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.OrdenVenta", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AlumnoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("ConfirmadaAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Estatus")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("FacturaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("Fecha")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Notas")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<decimal>("Total")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AlumnoId");
-
-                    b.HasIndex("Estatus");
-
-                    b.HasIndex("Fecha");
-
-                    b.ToTable("OrdenesVenta", (string)null);
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.OrdenVentaLinea", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Cantidad")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("OrdenVentaId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("PrecioUnitario")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<Guid>("ProductoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Subtotal")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrdenVentaId");
-
-                    b.HasIndex("ProductoId");
-
-                    b.ToTable("OrdenesVentaLineas", (string)null);
                 });
 
             modelBuilder.Entity("Tlaoami.Domain.Entities.Pago", b =>
@@ -1332,36 +1247,6 @@ namespace Tlaoami.Infrastructure.Migrations
                     b.Navigation("MovimientoBancario");
                 });
 
-            modelBuilder.Entity("Tlaoami.Domain.Entities.OrdenVenta", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.Alumno", "Alumno")
-                        .WithMany()
-                        .HasForeignKey("AlumnoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Alumno");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.OrdenVentaLinea", b =>
-                {
-                    b.HasOne("Tlaoami.Domain.Entities.OrdenVenta", "OrdenVenta")
-                        .WithMany("Lineas")
-                        .HasForeignKey("OrdenVentaId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Tlaoami.Domain.Entities.ConceptoCobro", "Producto")
-                        .WithMany()
-                        .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("OrdenVenta");
-
-                    b.Navigation("Producto");
-                });
-
             modelBuilder.Entity("Tlaoami.Domain.Entities.Pago", b =>
                 {
                     b.HasOne("Tlaoami.Domain.Entities.Factura", "Factura")
@@ -1528,11 +1413,6 @@ namespace Tlaoami.Infrastructure.Migrations
             modelBuilder.Entity("Tlaoami.Domain.Entities.Grupo", b =>
                 {
                     b.Navigation("Alumnos");
-                });
-
-            modelBuilder.Entity("Tlaoami.Domain.Entities.OrdenVenta", b =>
-                {
-                    b.Navigation("Lineas");
                 });
 #pragma warning restore 612, 618
         }

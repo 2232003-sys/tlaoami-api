@@ -25,6 +25,16 @@ namespace Tlaoami.Domain.Entities
         public Guid? ConceptoCobroId { get; set; }
         public ConceptoCobro? ConceptoCobro { get; set; }
 
+        /// <summary>
+        /// Tipo de origen del cargo: Colegiatura, OrdenVenta, Manual, Recargo, etc.
+        /// </summary>
+        public OrigenFactura? OrigenTipo { get; set; }
+
+        /// <summary>
+        /// ID del registro que originó este cargo (OrdenVentaId, AsignacionId, etc).
+        /// </summary>
+        public Guid? OrigenId { get; set; }
+
         public TipoDocumento TipoDocumento { get; set; } = TipoDocumento.Factura;
 
         public string? ReciboFolio { get; set; }

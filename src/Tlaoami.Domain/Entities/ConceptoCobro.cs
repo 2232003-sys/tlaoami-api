@@ -33,6 +33,18 @@ namespace Tlaoami.Domain.Entities
         public Periodicidad? Periodicidad { get; set; }
 
         /// <summary>
+        /// Tipo del concepto de cobro: Recurrente, Unico o Producto.
+        /// Default: Recurrente para mantener compatibilidad con colegiaturas.
+        /// </summary>
+        public TipoConcepto TipoConcepto { get; set; } = TipoConcepto.Recurrente;
+
+        /// <summary>
+        /// Indica si al concepto le aplica recargo por atraso.
+        /// Default: false.
+        /// </summary>
+        public bool AplicaRecargo { get; set; } = false;
+
+        /// <summary>
         /// Indica si el concepto requiere ser reportado en CFDI (Comprobante Fiscal Digital).
         /// Default: true (la mayoría de conceptos escolares requieren CFDI).
         /// </summary>
