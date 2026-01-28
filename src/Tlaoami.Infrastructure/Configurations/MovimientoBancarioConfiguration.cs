@@ -14,7 +14,7 @@ public class MovimientoBancarioConfiguration : IEntityTypeConfiguration<Movimien
 
         builder.Property(mb => mb.Id).ValueGeneratedNever();
         builder.Property(mb => mb.EscuelaId).IsRequired();
-        builder.Property(mb => mb.CuentaBancariaId).IsRequired();
+        builder.Property(mb => mb.CuentaBancariaId).IsRequired(false);
         builder.Property(mb => mb.ImportBatchId).IsRequired(false);
         builder.Property(mb => mb.Fecha).IsRequired();
         builder.Property(mb => mb.Monto).HasPrecision(18, 2).IsRequired();
@@ -45,7 +45,7 @@ public class MovimientoBancarioConfiguration : IEntityTypeConfiguration<Movimien
         builder.HasOne(mb => mb.CuentaBancaria)
             .WithMany(cb => cb.Movimientos)
             .HasForeignKey(mb => mb.CuentaBancariaId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasOne(mb => mb.ImportBatch)
             .WithMany(ib => ib.Movimientos)

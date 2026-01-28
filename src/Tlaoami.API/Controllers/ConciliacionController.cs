@@ -147,11 +147,22 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpGet("movimientos/{movimientoBancarioId}/detalle")]
-        public async Task<ActionResult<MovimientoDetalleDto>> GetMovimientoDetalle(Guid movimientoBancarioId)
+        public async Task<ActionResult<MovimientoDetalleDto>> GetMovimientoDetalle(string movimientoBancarioId)
         {
             try
             {
-                var detalle = await _consultaService.GetMovimientoDetalleAsync(movimientoBancarioId);
+                // Validar que sea un GUID válido
+                if (!Guid.TryParse(movimientoBancarioId, out var id))
+                {
+                    return BadRequest(new ProblemDetails 
+                    { 
+                        Title = "Parámetro inválido", 
+                        Detail = $"El ID '{movimientoBancarioId}' no es un GUID válido", 
+                        Status = StatusCodes.Status400BadRequest 
+                    });
+                }
+
+                var detalle = await _consultaService.GetMovimientoDetalleAsync(id);
                 return Ok(detalle);
             }
             catch (ApplicationException ex)
@@ -161,6 +172,15 @@ namespace Tlaoami.API.Controllers
             catch (InvalidOperationException ex)
             {
                 return BadRequest(new ProblemDetails { Title = "Operación inválida", Detail = ex.Message, Status = StatusCodes.Status400BadRequest });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new ProblemDetails 
+                { 
+                    Title = "Error interno", 
+                    Detail = ex.Message, 
+                    Status = StatusCodes.Status500InternalServerError 
+                });
             }
         }
 

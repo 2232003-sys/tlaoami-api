@@ -10,7 +10,7 @@ public class MovimientoBancario
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid EscuelaId { get; set; }
-    public Guid CuentaBancariaId { get; set; }
+    public Guid? CuentaBancariaId { get; set; }
     public Guid? ImportBatchId { get; set; }
 
     /// <summary>

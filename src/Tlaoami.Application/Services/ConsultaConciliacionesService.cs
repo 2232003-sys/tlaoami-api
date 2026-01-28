@@ -82,9 +82,17 @@ public class ConsultaConciliacionesService : IConsultaConciliacionesService
 
     public async Task<MovimientoDetalleDto> GetMovimientoDetalleAsync(Guid movimientoBancarioId)
     {
+        // Usar SQL raw para evitar cache de EF Core compiled queries
         var movimiento = await _context.MovimientosBancarios
+            .FromSqlInterpolated($@"
+                SELECT m.""Id"", m.""CreatedAtUtc"", m.""CuentaBancariaId"", m.""Descripcion"", m.""EscuelaId"", 
+                       m.""Estado"", m.""Estatus"", m.""Fecha"", m.""Folio"", m.""HashUnico"", m.""ImportBatchId"", 
+                       m.""Monto"", m.""ReferenciaBanco"", m.""Saldo"", m.""Tipo""
+                FROM ""MovimientosBancarios"" AS m
+                WHERE m.""Id"" = {movimientoBancarioId}
+            ")
             .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.Id == movimientoBancarioId);
+            .FirstOrDefaultAsync();
 
         if (movimiento == null)
         {
