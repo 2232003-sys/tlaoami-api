@@ -1,5 +1,6 @@
 using Tlaoami.API.Middleware;
 using Tlaoami.Application.Exceptions;
+using Tlaoami.Application.Rules;
 using Tlaoami.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
@@ -29,6 +30,17 @@ builder.Services.AddScoped<IAsignacionGrupoService, AsignacionGrupoService>();
 builder.Services.AddScoped<IAlumnoAsignacionesService, AlumnoAsignacionesService>();
 builder.Services.AddScoped<IConciliacionBancariaService, ConciliacionBancariaService>();
 builder.Services.AddScoped<ISugerenciasConciliacionService, SugerenciasConciliacionService>();
+
+// Reglas de conciliación
+builder.Services.AddScoped<IConciliacionRule, MontoMultiploCientoRule>();
+builder.Services.AddScoped<IConciliacionRule, FechaDiaEspecialRule>();
+builder.Services.AddScoped<IConciliacionRule, MontoRangoTipicoRule>();
+
+// Reglas de matching para auto-conciliación
+builder.Services.AddScoped<IMatchRule, MontoMatchRule>();
+builder.Services.AddScoped<IMatchRule, FechaMatchRule>();
+builder.Services.AddScoped<IMatchRule, ReferenciaMatchRule>();
+
 builder.Services.AddScoped<IConsultaConciliacionesService, ConsultaConciliacionesService>();
 builder.Services.AddScoped<IImportacionEstadoCuentaService, ImportacionEstadoCuentaService>();
 builder.Services.AddScoped<IPagosOnlineService, PagosOnlineService>();

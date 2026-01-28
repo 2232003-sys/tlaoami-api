@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
+using Tlaoami.Application.Rules;
 using Tlaoami.Domain.Entities;
 using Tlaoami.Infrastructure;
 
@@ -11,14 +12,20 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
 {
     private readonly TlaoamiDbContext _context;
     private readonly ILogger<ConciliacionBancariaService> _logger;
+    private readonly IEnumerable<IConciliacionRule> _reglas;
+    private readonly IEnumerable<IMatchRule> _matchRules;
     private const decimal TOLERANCE = 0.01m;
 
     public ConciliacionBancariaService(
         TlaoamiDbContext context,
-        ILogger<ConciliacionBancariaService> logger)
+        ILogger<ConciliacionBancariaService> logger,
+        IEnumerable<IConciliacionRule> reglas,
+        IEnumerable<IMatchRule> matchRules)
     {
         _context = context;
         _logger = logger;
+        _reglas = reglas;
+        _matchRules = matchRules;
     }
 
     public async Task ConciliarMovimientoAsync(
@@ -462,10 +469,174 @@ public class ConciliacionBancariaService : IConciliacionBancariaService
             throw new ApplicationException($"Pago con ID {pagoId} no encontrado");
         }
 
-        // Actualizar estado (en Pago usamos Estatus que es un enum, pero si es string, simplemente no lo cambiamos aquí)
-        // Por ahora solo marcamos con una fecha
-        await _context.SaveChangesAsync();
+        // Marcar como conciliado (usar IdempotencyKey para rastrear estado)
+        if (string.IsNullOrEmpty(pago.IdempotencyKey))
+            pago.IdempotencyKey = "CONCILIADO_MANUAL";
+        else if (!pago.IdempotencyKey.Contains("CONCILIADO"))
+            pago.IdempotencyKey += "_CONCILIADO_MANUAL";
 
+        await _context.SaveChangesAsync();
         _logger.LogInformation("Pago {PagoId} conciliado manualmente", pagoId);
+    }
+
+    public async Task RevertirConciliacionManualAsync(Guid pagoId)
+    {
+        var pago = await _context.Pagos.FirstOrDefaultAsync(p => p.Id == pagoId);
+        
+        if (pago == null)
+        {
+            _logger.LogWarning("Intento de revertir pago inexistente: {PagoId}", pagoId);
+            throw new ApplicationException($"Pago con ID {pagoId} no encontrado");
+        }
+
+        if (!pago.IdempotencyKey?.Contains("CONCILIADO") ?? true)
+        {
+            throw new InvalidOperationException("El pago no está conciliado manualmente");
+        }
+
+        // Revertir estado
+        pago.IdempotencyKey = pago.IdempotencyKey.Replace("_CONCILIADO_MANUAL", "").Replace("CONCILIADO_MANUAL", "");
+        if (string.IsNullOrWhiteSpace(pago.IdempotencyKey))
+            pago.IdempotencyKey = Guid.NewGuid().ToString();
+
+        await _context.SaveChangesAsync();
+        _logger.LogInformation("Conciliación del pago {PagoId} revertida", pagoId);
+    }
+
+    public async Task<IReadOnlyList<SugerenciaConciliacionMvpDto>> GetSugerenciasConciliacionAsync(Guid escuelaId)
+    {
+        // Obtener pagos pendientes (no conciliados)
+        var pagosPendientes = await _context.Pagos
+            .AsNoTracking()
+            .Where(p => p.Metodo == MetodoPago.Efectivo)
+            .Where(p => !p.IdempotencyKey.Contains("CONCILIADO"))
+            .ToListAsync();
+
+        var sugerencias = new List<SugerenciaConciliacionMvpDto>();
+
+        foreach (var pago in pagosPendientes)
+        {
+            // Evaluar automáticamente con reglas de matching
+            var resultado = await EvaluarMatchingAutomaticoAsync(pago);
+            
+            if (resultado.scoreTotal >= 95)
+            {
+                // Auto-conciliar
+                pago.IdempotencyKey = "AUTO_CONCILIADO_" + Guid.NewGuid().ToString();
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Pago {PagoId} conciliado automáticamente con score {Score}", pago.Id, resultado.scoreTotal);
+            }
+            else if (resultado.scoreTotal > 0)
+            {
+                // Solo sugerir si score > 0 pero < 95
+                var sugerencia = new SugerenciaConciliacionMvpDto
+                {
+                    PagoId = pago.Id,
+                    AlumnoId = pago.AlumnoId ?? Guid.Empty,
+                    Monto = pago.Monto,
+                    FechaPago = pago.FechaPago,
+                    Score = Math.Min(100, resultado.scoreTotal),
+                    ReglaMatch = string.Join(" | ", resultado.razonesAplicadas),
+                    Referencia = pago.IdempotencyKey
+                };
+                sugerencias.Add(sugerencia);
+            }
+        }
+
+        _logger.LogInformation("Generadas {Count} sugerencias de conciliación para escuela {EscuelaId}", 
+            sugerencias.Count, escuelaId);
+
+        return sugerencias.OrderByDescending(s => s.Score).ToList();
+    }
+
+    private async Task<(int scoreTotal, List<string> razonesAplicadas)> EvaluarMatchingAutomaticoAsync(Pago pago)
+    {
+        int scoreTotal = 0;
+        var razones = new List<string>();
+
+        // Evaluar todas las reglas de matching
+        foreach (var matchRule in _matchRules)
+        {
+            var resultado = await matchRule.EvaluarAsync(pago);
+            if (resultado.Matches)
+            {
+                scoreTotal += resultado.Score;
+                razones.Add($"{matchRule.Nombre}: {resultado.Reason} (+{resultado.Score})");
+            }
+        }
+
+        return (scoreTotal, razones);
+    }
+
+    public async Task<KpiConciliacionDto> GetKpisConciliacionAsync(Guid escuelaId)
+    {
+        var pagos = await _context.Pagos
+            .AsNoTracking()
+            .ToListAsync();
+
+        var kpi = new KpiConciliacionDto();
+
+        kpi.TotalPagosReportados = pagos.Count;
+        kpi.PagosAutoConciliados = pagos.Count(p => p.IdempotencyKey.Contains("AUTO_CONCILIADO"));
+        kpi.PagosConciliadosManualmente = pagos.Count(p => p.IdempotencyKey.Contains("CONCILIADO") && !p.IdempotencyKey.Contains("AUTO"));
+        kpi.PagosPendientes = pagos.Count(p => !p.IdempotencyKey.Contains("CONCILIADO"));
+
+        // Calcular tasas
+        if (kpi.TotalPagosReportados > 0)
+        {
+            var pagosConConciliacion = kpi.PagosAutoConciliados + kpi.PagosConciliadosManualmente;
+            kpi.TasaAutoConciliacion = (decimal)kpi.PagosAutoConciliados / pagosConConciliacion * 100;
+        }
+
+        // Montos
+        kpi.MontoTotalConciliado = pagos
+            .Where(p => p.IdempotencyKey.Contains("CONCILIADO"))
+            .Sum(p => p.Monto);
+
+        kpi.MontoAutoConciliado = pagos
+            .Where(p => p.IdempotencyKey.Contains("AUTO_CONCILIADO"))
+            .Sum(p => p.Monto);
+
+        kpi.MontoManualConciliado = kpi.MontoTotalConciliado - kpi.MontoAutoConciliado;
+
+        _logger.LogInformation("KPIs conciliación calculados para escuela {EscuelaId}: Auto={Auto}, Manual={Manual}, Pendientes={Pendientes}",
+            escuelaId, kpi.PagosAutoConciliados, kpi.PagosConciliadosManualmente, kpi.PagosPendientes);
+
+        return kpi;
+    }
+
+    private async Task<SugerenciaConciliacionMvpDto?> EvaluarReglasMatchingAsync(Pago pago)
+    {
+        int scoreTotal = 0;
+        var reglasAplicadas = new List<string>();
+
+        // Evaluar todas las reglas
+        foreach (var regla in _reglas)
+        {
+            bool aplica = await regla.EvaluarAsync(pago);
+            if (aplica)
+            {
+                scoreTotal += regla.Puntos;
+                reglasAplicadas.Add($"{regla.Nombre} (+{regla.Puntos})");
+            }
+        }
+
+        // Solo retornar sugerencias con score > 0
+        if (scoreTotal == 0)
+            return null;
+
+        // Normalizar score a 0-100 si es necesario (máximo posible es suma de todos los puntos)
+        int scoreNormalizado = Math.Min(100, scoreTotal);
+
+        return new SugerenciaConciliacionMvpDto
+        {
+            PagoId = pago.Id,
+            AlumnoId = pago.AlumnoId ?? Guid.Empty,
+            Monto = pago.Monto,
+            FechaPago = pago.FechaPago,
+            Score = scoreNormalizado,
+            ReglaMatch = string.Join(" | ", reglasAplicadas),
+            Referencia = pago.IdempotencyKey
+        };
     }
 }

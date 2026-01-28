@@ -21,4 +21,10 @@ public interface IConciliacionBancariaService
     Task<IReadOnlyList<PagoDto>> GetPagosManualesAsync(Guid escuelaId);
 
     Task ConciliarPagoManualAsync(Guid pagoId);
+
+    Task RevertirConciliacionManualAsync(Guid pagoId);
+
+    Task<IReadOnlyList<SugerenciaConciliacionMvpDto>> GetSugerenciasConciliacionAsync(Guid escuelaId);
+
+    Task<KpiConciliacionDto> GetKpisConciliacionAsync(Guid escuelaId);
 }

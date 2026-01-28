@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Tlaoami.Application.Rules;
 using Tlaoami.Application.Services;
 using Tlaoami.Domain.Entities;
 using Tlaoami.Domain.Enums;
@@ -27,7 +28,19 @@ public class ConciliacionBancariaServiceTests
     private ConciliacionBancariaService CreateService(TlaoamiDbContext context)
     {
         var mockLogger = new Mock<ILogger<ConciliacionBancariaService>>();
-        return new ConciliacionBancariaService(context, mockLogger.Object);
+        var reglas = new List<IConciliacionRule>
+        {
+            new MontoMultiploCientoRule(),
+            new FechaDiaEspecialRule(),
+            new MontoRangoTipicoRule()
+        };
+        var matchRules = new List<IMatchRule>
+        {
+            new MontoMatchRule(),
+            new FechaMatchRule(),
+            new ReferenciaMatchRule()
+        };
+        return new ConciliacionBancariaService(context, mockLogger.Object, reglas, matchRules);
     }
 
     private Alumno CrearAlumno(TlaoamiDbContext context)

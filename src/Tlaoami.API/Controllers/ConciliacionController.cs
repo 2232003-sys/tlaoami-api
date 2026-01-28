@@ -186,6 +186,29 @@ namespace Tlaoami.API.Controllers
             await _conciliacionService.ConciliarPagoManualAsync(pagoId);
             return Ok(new { mensaje = "Pago conciliado exitosamente" });
         }
+
+        [HttpPost("pagos-manuales/{pagoId}/revertir")]
+        public async Task<IActionResult> RevertirConciliacionManual(Guid pagoId)
+        {
+            await _conciliacionService.RevertirConciliacionManualAsync(pagoId);
+            return Ok(new { mensaje = "Conciliación revertida" });
+        }
+
+        [HttpGet("sugerencias")]
+        public async Task<IActionResult> GetSugerenciasConciliacion()
+        {
+            var escuelaId = Guid.Empty; // TODO: extraer de contexto autenticado
+            var sugerencias = await _conciliacionService.GetSugerenciasConciliacionAsync(escuelaId);
+            return Ok(sugerencias);
+        }
+
+        [HttpGet("kpis")]
+        public async Task<IActionResult> GetKpisConciliacion()
+        {
+            var escuelaId = Guid.Empty; // TODO: extraer de contexto autenticado
+            var kpis = await _conciliacionService.GetKpisConciliacionAsync(escuelaId);
+            return Ok(kpis);
+        }
     }
 
     public record ConciliarRequest(
