@@ -15,6 +15,36 @@ namespace Tlaoami.Infrastructure.Configurations
             builder.HasIndex(s => s.EscuelaId)
                    .IsUnique();
 
+            // ===== INFORMACIÓN INSTITUCIONAL =====
+            builder.Property(s => s.Nombre)
+                   .HasMaxLength(200)
+                   .IsRequired();
+
+            builder.Property(s => s.RazonSocial)
+                   .HasMaxLength(200)
+                   .IsRequired();
+
+            builder.Property(s => s.Direccion)
+                   .HasMaxLength(500)
+                   .IsRequired();
+
+            builder.Property(s => s.Telefono)
+                   .HasMaxLength(20)
+                   .IsRequired();
+
+            builder.Property(s => s.Email)
+                   .HasMaxLength(100)
+                   .IsRequired();
+
+            builder.Property(s => s.LogoUrl)
+                   .HasMaxLength(500)
+                   .IsRequired();
+
+            builder.Property(s => s.TextoRecibos)
+                   .HasMaxLength(1000)
+                   .IsRequired();
+
+            // ===== CONFIGURACIÓN OPERATIVA =====
             builder.Property(s => s.DiaCorteColegiatura)
                    .IsRequired();
 
@@ -28,6 +58,7 @@ namespace Tlaoami.Infrastructure.Configurations
             builder.Property(s => s.Moneda)
                    .HasMaxLength(10)
                    .IsRequired();
+
 
             builder.Property(s => s.CreatedAtUtc)
                    .IsRequired();

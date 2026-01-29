@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Tlaoami.API.Kpi.Dtos;
 using Tlaoami.API.Kpi.Queries;
+using Tlaoami.Domain.Enums;
+using Tlaoami.API.Authorization;
 
 namespace Tlaoami.API.Controllers;
 
@@ -11,9 +14,11 @@ namespace Tlaoami.API.Controllers;
 /// NO contiene: lógica de negocio, validaciones complejas, modificaciones
 /// 
 /// Propósito: Exponer métricas financieras clave sin efectos secundarios
+/// Solo Owner puede acceder.
 /// </summary>
 [ApiController]
 [Route("api/v1/kpi")]
+[AuthorizeByRole(UserRole.Owner)]
 public class KpiController : ControllerBase
 {
     private readonly DashboardFinancieroQueries _queries;

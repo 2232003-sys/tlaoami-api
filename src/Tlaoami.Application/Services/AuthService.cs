@@ -36,7 +36,7 @@ namespace Tlaoami.Application.Services
             if (!VerifyPassword(request.Password, user.PasswordHash))
                 throw new ValidationException("Usuario o contraseña incorrectos", code: "INVALID_CREDENTIALS");
 
-            var token = GenerateJwtToken(user.Username, user.Role);
+            var token = GenerateJwtToken(user.Id, user.Username, user.Role);
 
             return new LoginResponseDto
             {
@@ -52,7 +52,7 @@ namespace Tlaoami.Application.Services
             return password == passwordHash;
         }
 
-        private string GenerateJwtToken(string username, string role)
+        private string GenerateJwtToken(Guid userId, string username, string role)
         {
             var jwtKey = _configuration["Jwt:Key"] ?? "TlaoamiSecretKeyForDevelopmentOnly12345678";
             var jwtIssuer = _configuration["Jwt:Issuer"] ?? "Tlaoami";
@@ -64,9 +64,10 @@ namespace Tlaoami.Application.Services
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, username),
-                new Claim(ClaimTypes.Role, role),
-                new Claim(JwtRegisteredClaimNames.Sub, username),
+                new Claim(System.Security.Claims.ClaimTypes.NameIdentifier, userId.ToString()),
+                new Claim(System.Security.Claims.ClaimTypes.Name, username),
+                new Claim(System.Security.Claims.ClaimTypes.Role, role),
+                new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 

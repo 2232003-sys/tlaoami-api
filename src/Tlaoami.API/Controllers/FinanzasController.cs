@@ -1,17 +1,22 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
 using Tlaoami.Application.Finanzas;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Application.Exceptions;
+using Tlaoami.Domain.Enums;
+using Tlaoami.API.Authorization;
 
 namespace Tlaoami.API.Controllers
 {
     /// <summary>
     /// Controlador para operaciones financieras centralizadas del ERP.
+    /// Solo Owner (Admin) puede acceder.
     /// </summary>
     [ApiController]
     [Route("api/v1/finanzas")]
+    [AuthorizeByRole(UserRole.Owner)]
     public class FinanzasController : ControllerBase
     {
         private readonly IGenerarCargosRecurrentesService _cargosService;

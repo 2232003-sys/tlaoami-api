@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Tlaoami.Application.Contracts;
 using Tlaoami.Application.Dtos;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Domain.Entities;
+using Tlaoami.Domain.Enums;
+using Tlaoami.API.Authorization;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Http;
 
@@ -10,6 +13,7 @@ namespace Tlaoami.API.Controllers
 {
     [ApiController]
     [Route("api/v1/conciliacion")]
+    [Authorize]
     public class ConciliacionController : ControllerBase
     {
         private readonly IConciliacionBancariaService _conciliacionService;
@@ -46,6 +50,7 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpPost("importar-estado-cuenta")]
+        [AuthorizeByRole(UserRole.Owner)]
         public async Task<ActionResult<ImportacionResultadoDto>> ImportarEstadoCuenta([FromForm] IFormFile? archivoCsv)
         {
             try

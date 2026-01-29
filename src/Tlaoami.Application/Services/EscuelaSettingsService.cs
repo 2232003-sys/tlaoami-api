@@ -27,10 +27,17 @@ namespace Tlaoami.Application.Services
             return new EscuelaSettingsDto
             {
                 EscuelaId = s.EscuelaId,
+                Nombre = s.Nombre,
+                RazonSocial = s.RazonSocial,
+                Direccion = s.Direccion,
+                Telefono = s.Telefono,
+                Email = s.Email,
+                LogoUrl = s.LogoUrl,
+                TextoRecibos = s.TextoRecibos,
+                Moneda = s.Moneda,
+                ZonaHoraria = s.ZonaHoraria,
                 DiaCorteColegiatura = s.DiaCorteColegiatura,
                 BloquearReinscripcionConSaldo = s.BloquearReinscripcionConSaldo,
-                ZonaHoraria = s.ZonaHoraria,
-                Moneda = s.Moneda,
                 CreatedAtUtc = s.CreatedAtUtc,
                 UpdatedAtUtc = s.UpdatedAtUtc
             };
@@ -48,10 +55,17 @@ namespace Tlaoami.Application.Services
                 {
                     Id = Guid.NewGuid(),
                     EscuelaId = dto.EscuelaId,
+                    Nombre = dto.Nombre,
+                    RazonSocial = dto.RazonSocial,
+                    Direccion = dto.Direccion,
+                    Telefono = dto.Telefono,
+                    Email = dto.Email,
+                    LogoUrl = dto.LogoUrl,
+                    TextoRecibos = dto.TextoRecibos,
+                    Moneda = dto.Moneda,
+                    ZonaHoraria = dto.ZonaHoraria,
                     DiaCorteColegiatura = dto.DiaCorteColegiatura,
                     BloquearReinscripcionConSaldo = dto.BloquearReinscripcionConSaldo,
-                    ZonaHoraria = dto.ZonaHoraria,
-                    Moneda = dto.Moneda,
                     CreatedAtUtc = DateTime.UtcNow,
                     UpdatedAtUtc = null
                 };
@@ -59,10 +73,17 @@ namespace Tlaoami.Application.Services
             }
             else
             {
+                s.Nombre = dto.Nombre;
+                s.RazonSocial = dto.RazonSocial;
+                s.Direccion = dto.Direccion;
+                s.Telefono = dto.Telefono;
+                s.Email = dto.Email;
+                s.LogoUrl = dto.LogoUrl;
+                s.TextoRecibos = dto.TextoRecibos;
+                s.Moneda = dto.Moneda;
+                s.ZonaHoraria = dto.ZonaHoraria;
                 s.DiaCorteColegiatura = dto.DiaCorteColegiatura;
                 s.BloquearReinscripcionConSaldo = dto.BloquearReinscripcionConSaldo;
-                s.ZonaHoraria = dto.ZonaHoraria;
-                s.Moneda = dto.Moneda;
                 s.UpdatedAtUtc = DateTime.UtcNow;
             }
 
@@ -71,10 +92,17 @@ namespace Tlaoami.Application.Services
             return new EscuelaSettingsDto
             {
                 EscuelaId = s.EscuelaId,
+                Nombre = s.Nombre,
+                RazonSocial = s.RazonSocial,
+                Direccion = s.Direccion,
+                Telefono = s.Telefono,
+                Email = s.Email,
+                LogoUrl = s.LogoUrl,
+                TextoRecibos = s.TextoRecibos,
+                Moneda = s.Moneda,
+                ZonaHoraria = s.ZonaHoraria,
                 DiaCorteColegiatura = s.DiaCorteColegiatura,
                 BloquearReinscripcionConSaldo = s.BloquearReinscripcionConSaldo,
-                ZonaHoraria = s.ZonaHoraria,
-                Moneda = s.Moneda,
                 CreatedAtUtc = s.CreatedAtUtc,
                 UpdatedAtUtc = s.UpdatedAtUtc
             };

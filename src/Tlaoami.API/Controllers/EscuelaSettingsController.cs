@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using Tlaoami.Application.Interfaces;
 using Tlaoami.Application.Settings;
+using Tlaoami.Domain.Enums;
+using Tlaoami.API.Authorization;
 
 namespace Tlaoami.API.Controllers
 {
@@ -17,6 +20,7 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<EscuelaSettingsDto>> Get()
         {
             var dto = await _service.GetSettingsAsync();
@@ -25,6 +29,7 @@ namespace Tlaoami.API.Controllers
         }
 
         [HttpPut]
+        [AuthorizeByRole(UserRole.Owner)]
         public async Task<ActionResult<EscuelaSettingsDto>> Put([FromBody] EscuelaSettingsDto dto)
         {
             var updated = await _service.UpdateSettingsAsync(dto);
